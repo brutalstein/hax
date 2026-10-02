@@ -78,6 +78,22 @@ int main() {
       optimizer.evaluate(faster_profile, hot_samples, baseline_summary);
   require(!hot.feasible, "thermally unsafe candidate rejected");
 
+
+  auto drifting_samples = samples(2.0, 0.8, 0.05);
+  for (std::size_t i = drifting_samples.frame_time_ms.size() * 4 / 5;
+       i < drifting_samples.frame_time_ms.size();
+       ++i) {
+    drifting_samples.frame_time_ms[i] *= 1.25;
+  }
+  const auto drifting =
+      optimizer.evaluate(
+          faster_profile,
+          drifting_samples,
+          baseline_summary);
+  require(
+      !drifting.feasible,
+      "frame-time drift candidate rejected");
+
   const auto best = optimizer.choose_best({baseline, faster, hot}, baseline);
   require(best.has_value(), "best candidate exists");
   require(
