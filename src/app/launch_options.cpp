@@ -61,7 +61,7 @@ std::filesystem::path persisted_profile_path() {
   }
 
   return std::filesystem::path(local_app_data) /
-         L"HaxPerformanceRuntime" /
+         L"HaxballApp" /
          L"profile.ini";
 }
 
