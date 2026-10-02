@@ -170,6 +170,9 @@ std::optional<Capture> load_capture(
   const auto display_latency = column(columns, "DisplayLatency");
   const auto between_presents = column(columns, "MsBetweenPresents");
   const auto until_displayed = column(columns, "MsUntilDisplayed");
+  // PresentMon 2.6 CSVs have no DisplayLatency column; frame start to display
+  // is CPU busy (frame start -> Present) plus Present -> display.
+  const auto cpu_busy = column(columns, "MsCPUBusy");
   const auto process_id = column(columns, "ProcessID");
   const auto swap_chain = column(columns, "SwapChainAddress");
   const auto hybrid_present = column(columns, "HybridPresent");
@@ -197,7 +200,17 @@ std::optional<Capture> load_capture(
     auto& stream = streams[key];
     append_if_valid(row, all_input, stream.input_latency);
     append_if_valid(row, click_input, stream.click_latency);
-    append_if_valid(row, display_latency, stream.display_latency);
+    if (display_latency) {
+      append_if_valid(row, display_latency, stream.display_latency);
+    } else if (cpu_busy && until_displayed &&
+               *cpu_busy < row.size() && *until_displayed < row.size()) {
+      const auto busy = parse_number(row[*cpu_busy]);
+      const auto until = parse_number(row[*until_displayed]);
+      if (busy && until && *busy >= 0.0 && *until > 0.0 &&
+          *busy + *until <= 10000.0) {
+        stream.display_latency.push_back(*busy + *until);
+      }
+    }
     append_if_valid(row, between_presents, stream.frame_time);
     append_if_valid(row, until_displayed, stream.present_to_display);
     append_if_valid(

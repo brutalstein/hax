@@ -114,6 +114,7 @@ jobs:
           Copy-Item "scripts/run.ps1" $scripts
           Copy-Item "docs/*" $docs
           Copy-Item "Install Haxball App.cmd" $stage
+          Copy-Item "Recalibrate Haxball App.cmd" $stage
           Copy-Item "README.md","LICENSE","THIRD_PARTY_NOTICES.md" $stage
           if (Test-Path "SECURITY.md") {
             Copy-Item "SECURITY.md" $stage

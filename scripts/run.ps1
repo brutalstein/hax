@@ -1,10 +1,12 @@
-param(
-  [switch]$Recalibrate,
-  [switch]$SkipCalibration,
+﻿param(
   [int]$CalibrationSeconds = 10,
   [string]$PresentMon = ""
 )
 
+# Optional full latency measurement ("Recalibrate Haxball App.cmd"), then
+# starts the game. Haxball App.exe never needs it: its first launch stores the
+# measured default profile instantly. Runs under Windows PowerShell 5.1: keep
+# every cmdlet and parameter 5.1-compatible.
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
@@ -14,15 +16,12 @@ $legacyPackagedExe = Join-Path $root "bin/Haxball App.exe"
 
 if (Test-Path $sourceExe) {
   $exe = $sourceExe
-  $binaryDir = Split-Path -Parent $sourceExe
 }
 elseif (Test-Path $portableExe) {
   $exe = $portableExe
-  $binaryDir = $root
 }
 elseif (Test-Path $legacyPackagedExe) {
   $exe = $legacyPackagedExe
-  $binaryDir = Split-Path -Parent $legacyPackagedExe
 }
 else {
   throw "Haxball App.exe was not found."
@@ -31,75 +30,93 @@ else {
 $appData = Join-Path $env:LOCALAPPDATA "HaxballApp"
 New-Item -ItemType Directory -Force -Path $appData | Out-Null
 
-$probe = Join-Path $binaryDir "hax_system_probe.exe"
-$fingerprintScript = Join-Path $PSScriptRoot "hardware-fingerprint.ps1"
-$profilePath = Join-Path $appData "profile.ini"
 $errorPath = Join-Path $appData "last-calibration-error.txt"
 
-$currentFingerprint = $null
-if ((Test-Path $probe) -and (Test-Path $fingerprintScript)) {
+# One calibration at a time.
+$mutex = New-Object System.Threading.Mutex($false, "Local\HaxballAppBootstrap")
+try {
+  $ownsMutex = $mutex.WaitOne(0)
+}
+catch [System.Threading.AbandonedMutexException] {
+  $ownsMutex = $true
+}
+if (-not $ownsMutex) {
+  exit 0
+}
+
+# Calibration closes every Haxball App window, so never run it while the game
+# is open; the launch below then just focuses the running game.
+$gameRunning = [bool](
+  Get-Process -Name "Haxball App" -ErrorAction SilentlyContinue |
+    Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero })
+
+function Show-CalibrationNotice {
+  # Separate process: calibration force-closes "Haxball App" processes, and the
+  # caption must differ from the benchmark window title the input helper finds.
+  $text =
+    "Haxball App bu bilgisayar için optimize ediliyor.`n`n" +
+    "Birkaç dakika boyunca ölçüm pencereleri açılıp kapanacak. " +
+    "En doğru sonuç için bu sırada bilgisayarı kullanmayın.`n`n" +
+    "Bitince oyun kendiliğinden açılır."
+  $noticeScript =
+    "Add-Type -AssemblyName PresentationFramework; " +
+    "[void][System.Windows.MessageBox]::Show('$text', " +
+    "'Haxball App - Hazırlanıyor', 'OK', 'Information')"
+  $encoded = [Convert]::ToBase64String(
+    [Text.Encoding]::Unicode.GetBytes($noticeScript))
+
   try {
-    $currentFingerprint = & $fingerprintScript -ProbeExecutable $probe |
-      Select-Object -Last 1
+    return Start-Process powershell.exe -PassThru -WindowStyle Hidden `
+      -ArgumentList "-NoProfile -EncodedCommand $encoded"
   }
   catch {
-    $currentFingerprint = $null
+    return $null
   }
 }
 
-$storedFingerprint = $null
-if (Test-Path $profilePath) {
-  $storedFingerprint = Get-Content $profilePath |
-    Where-Object { $_ -like "fingerprint=*" } |
-    Select-Object -Last 1
+try {
+  if (-not $gameRunning) {
+    $calibrate = Join-Path $PSScriptRoot "calibrate.ps1"
 
-  if ($storedFingerprint) {
-    $storedFingerprint = $storedFingerprint.Substring("fingerprint=".Length)
-  }
-}
+    if (Test-Path $calibrate) {
+      $notice = Show-CalibrationNotice
+      try {
+        $calibrationArgs = @{
+          Seconds = $CalibrationSeconds
+          Configuration = "Release"
+        }
 
-$profileMissing = -not (Test-Path $profilePath)
-$fingerprintMissing = [string]::IsNullOrWhiteSpace($storedFingerprint)
-$fingerprintChanged =
-  (-not [string]::IsNullOrWhiteSpace($currentFingerprint)) -and
-  ($storedFingerprint -ne $currentFingerprint)
+        if (-not [string]::IsNullOrWhiteSpace($PresentMon)) {
+          $calibrationArgs["PresentMon"] = $PresentMon
+        }
 
-$needsCalibration =
-  $Recalibrate -or
-  $profileMissing -or
-  $fingerprintMissing -or
-  $fingerprintChanged
+        & $calibrate @calibrationArgs
 
-if ($needsCalibration -and -not $SkipCalibration) {
-  $calibrate = Join-Path $PSScriptRoot "calibrate.ps1"
-
-  if (Test-Path $calibrate) {
-    try {
-      $calibrationArgs = @{
-        Seconds = $CalibrationSeconds
-        Configuration = "Release"
+        if (Test-Path $errorPath) {
+          Remove-Item $errorPath -Force -ErrorAction SilentlyContinue
+        }
       }
-
-      if (-not [string]::IsNullOrWhiteSpace($PresentMon)) {
-        $calibrationArgs["PresentMon"] = $PresentMon
+      catch {
+        @(
+          "Haxball App calibration failed."
+          "Time: $((Get-Date).ToUniversalTime().ToString('o'))"
+          "Message: $($_.Exception.Message)"
+          ""
+          $_.ScriptStackTrace
+        ) | Set-Content -Path $errorPath -Encoding utf8
+        # The current profile.ini stays; calibrate.ps1 only replaces it on
+        # success.
       }
-
-      & $calibrate @calibrationArgs
-
-      if (Test-Path $errorPath) {
-        Remove-Item $errorPath -Force -ErrorAction SilentlyContinue
+      finally {
+        if ($notice -and -not $notice.HasExited) {
+          Stop-Process -Id $notice.Id -Force -ErrorAction SilentlyContinue
+        }
       }
     }
-    catch {
-      @(
-        "Haxball App calibration failed."
-        "Time: $(Get-Date -AsUTC -Format o)"
-        "Message: $($_.Exception.Message)"
-        ""
-        $_.ScriptStackTrace
-      ) | Set-Content -Path $errorPath -Encoding utf8
-    }
   }
 }
-
-Start-Process -FilePath $exe -ArgumentList "--hax-bootstrap-complete"
+finally {
+  # The game must open even if anything above failed.
+  Start-Process -FilePath $exe
+  $mutex.ReleaseMutex()
+}

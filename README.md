@@ -19,7 +19,18 @@ Haxball App is an unofficial Windows-first native performance client for the off
 2. Extract it.
 3. Double-click **Haxball App.exe**.
 
-No installer is required. On first launch, the app starts its hardware calibration in the background and then opens automatically. If calibration fails for any reason, Haxball App still opens with safe browser-default settings and writes the diagnostic to:
+No installer is required. The app opens as a single plain window (no browser tabs or address bar), maximized, on the official HaxBall play page.
+
+- **First launch:** the game opens immediately. A short notice ("İlk açılış: bu bilgisayar için ayarlanıyor…") checks the display refresh rate and GPU for about a second, stores the low-latency profile and fades out. It warns if GPU acceleration is unavailable.
+- **Every later launch:** the game opens instantly with the stored profile; nothing runs in the background.
+- **Joining by link:** paste a room link (or room code) into the bar at the top of the page; it joins immediately. `Ctrl+L` focuses the bar, `Esc` returns to the game. Room links clicked inside the game stay in the app; other links open in your default browser.
+- **Fullscreen:** `F11` toggles borderless fullscreen (works while the game has focus).
+- **Low-latency canvas:** HaxBall's canvases are created with `desynchronized: true`, letting Chromium present the game directly instead of waiting for the compositor (possible tearing). The game code itself is not modified.
+- **Launching again** while the game is open just brings the existing window to the front.
+
+The stored profile comes from full PresentMon calibration: browser vsync pacing gave the lowest frame-to-display latency (about 9.5 ms versus 21 ms uncapped at 300 Hz), while GPU selection and CPU policy were within measurement noise.
+
+**Recalibrate Haxball App.cmd** is optional. Close the game and run it to measure your own PC (benchmark windows open and close for a few minutes, then the game opens). If it fails, the current profile stays and the diagnostic is written to:
 
 ```text
 %LOCALAPPDATA%\HaxballApp\last-calibration-error.txt
@@ -35,8 +46,6 @@ The optional installer copies the application to:
 
 It creates **Haxball App** shortcuts on the Desktop and Start Menu that point directly to **Haxball App.exe**. The supplied H icon is embedded directly in **Haxball App.exe** and is also assigned to the native CEF window, so Explorer, the desktop shortcut and the Windows taskbar use the same application icon.
 
-On first launch, Haxball App performs hardware-adaptive calibration and stores the measured winning profile before opening the official HaxBall page.
-
 ## What it optimizes
 
 The calibration engine can evaluate up to 36 hardware-relevant configurations across frame policy, GPU selection, CPU Sets and process priority. Selection uses robust timing evidence including p50/p99 latency, p99 frame time, MAD jitter, PresentMon display timing, CPU/GPU utilization, hybrid/cross-adapter presentation and sustained frame-time drift.
@@ -49,7 +58,7 @@ The selected machine profile is stored at:
 %LOCALAPPDATA%\HaxballApp\profile.ini
 ```
 
-A hardware/runtime fingerprint invalidates stale calibration when relevant hardware, display, driver, Windows or CEF context changes.
+Delete it to return to the default profile on the next launch.
 
 ## Performance boundaries
 
@@ -65,7 +74,8 @@ A hardware/runtime fingerprint invalidates stale calibration when relevant hardw
 
 ```powershell
 .\scripts\build.ps1 -Configuration Release -App
-.\scripts\run.ps1
+.\build\Release\"Haxball App.exe"
+.\scripts\run.ps1   # optional full calibration
 ```
 
 Or:

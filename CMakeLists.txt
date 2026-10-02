@@ -111,6 +111,8 @@ if(HAX_BUILD_APP)
   endif()
 
   file(TO_CMAKE_PATH "${HAX_GENERATED_ICON}" HAX_APP_ICON_PATH)
+  set(HAX_APP_MANIFEST_PATH
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/windows/haxball_app.manifest")
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/assets/windows/haxball_app.rc.in"
     "${CMAKE_CURRENT_BINARY_DIR}/haxball_app.rc"

@@ -9,7 +9,7 @@ namespace hax::app {
 struct LaunchOptions {
   hax::core::CandidateProfile profile;
   bool benchmark_mode{false};
-  bool bootstrap_complete{false};
+  bool first_run{false};
   std::wstring benchmark_path;
   std::string url{"https://www.haxball.com/play"};
 };
