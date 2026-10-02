@@ -1,0 +1,63 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "core",
+      "displayName": "Portable core",
+      "binaryDir": "${sourceDir}/build/core",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "HAX_BUILD_APP": "OFF",
+        "HAX_BUILD_TESTS": "ON",
+        "HAX_BUILD_BENCHMARKS": "ON"
+      }
+    },
+    {
+      "name": "windows-app",
+      "displayName": "Windows x64 CEF app",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/win64",
+      "cacheVariables": {
+        "HAX_BUILD_APP": "ON",
+        "HAX_BUILD_TESTS": "ON",
+        "HAX_BUILD_BENCHMARKS": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "core-release",
+      "configurePreset": "core",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-app",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "core",
+      "configurePreset": "core",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows",
+      "configurePreset": "windows-app",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
