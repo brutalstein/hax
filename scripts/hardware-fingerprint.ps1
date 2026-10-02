@@ -11,7 +11,7 @@ if (-not (Test-Path $ProbeExecutable)) {
 
 $material = [System.Collections.Generic.List[string]]::new()
 
-$material.Add("PROFILE_SCHEMA=2")
+$material.Add("PROFILE_SCHEMA=3")
 $material.Add("CEF=154.0.28+g564dd6c+chromium-154.0.8037.58")
 $material.Add("OS=$([Environment]::OSVersion.VersionString)")
 
