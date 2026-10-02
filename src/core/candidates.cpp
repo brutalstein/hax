@@ -80,15 +80,20 @@ std::vector<CandidateProfile> generate_candidates(
   }
 
   std::vector<CandidateProfile> candidates;
+  const std::vector<PriorityPolicy> priority_policies{
+      PriorityPolicy::normal,
+      PriorityPolicy::above_normal,
+      PriorityPolicy::high,
+  };
+
   candidates.reserve(
       frame_policies.size() * gpu_policies.size() *
-      cpu_policies.size() * 2);
+      cpu_policies.size() * priority_policies.size());
 
   for (const auto frame : frame_policies) {
     for (const auto gpu : gpu_policies) {
       for (const auto cpu : cpu_policies) {
-        for (const auto priority :
-             {PriorityPolicy::above_normal, PriorityPolicy::high}) {
+        for (const auto priority : priority_policies) {
           CandidateProfile candidate;
           candidate.frame = frame;
           candidate.gpu = gpu;
