@@ -14,6 +14,7 @@ For each candidate c, samples are summarized as:
 - CPU/GPU utilization;
 - thermal headroom;
 - dropped-frame ratio;
+- hybrid/cross-adapter present ratio;
 - frame-time drift between the first and last 20% of the capture.
 
 A candidate is rejected when:
@@ -44,6 +45,7 @@ J(c) =
 + 0.03 CPU_penalty
 + 0.02 GPU_penalty
 + 0.01 thermal_penalty
++ 0.02 hybrid_present_ratio
 + 0.20 uncertainty
 ```
 
