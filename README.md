@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/windows/haxball_app.ico" width="128" alt="Haxball App icon">
+  <img src="assets/windows/haxball_app_source.png" width="128" alt="Haxball App icon">
 </p>
 
 # Haxball App
