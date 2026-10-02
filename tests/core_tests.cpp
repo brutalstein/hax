@@ -97,6 +97,17 @@ int main() {
       hybrid.score > faster.score,
       "cross-adapter presentation receives a tie-break penalty");
 
+  auto missing_present_samples = samples(2.0, 0.8, 0.1);
+  missing_present_samples.present_to_display_ms.clear();
+  const auto missing_present =
+      optimizer.evaluate(
+          faster_profile,
+          missing_present_samples,
+          baseline_summary);
+  require(
+      !missing_present.feasible,
+      "missing display timing cannot receive a zero-latency advantage");
+
   auto hot_samples = samples(2.0, 0.8, 0.1);
   hot_samples.minimum_thermal_headroom_c = 2.0;
   const auto hot =
