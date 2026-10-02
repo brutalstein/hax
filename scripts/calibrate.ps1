@@ -1,5 +1,5 @@
 param(
-  [string]$PresentMon = "PresentMon.exe",
+  [string]$PresentMon = "",
   [int]$Seconds = 10,
   [string]$Configuration = "Release"
 )
@@ -11,22 +11,67 @@ if ($Seconds -lt 5) {
 }
 
 $root = Split-Path -Parent $PSScriptRoot
-$exe = Join-Path $root "build/$Configuration/hax.exe"
-$probe = Join-Path $root "build/$Configuration/hax_system_probe.exe"
-$analyzer = Join-Path $root "build/$Configuration/hax_capture_analyzer.exe"
+$sourceBinaryDir = Join-Path $root "build/$Configuration"
+$packagedBinaryDir = Join-Path $root "bin"
+
+if (Test-Path (Join-Path $sourceBinaryDir "hax.exe")) {
+  $binaryDir = $sourceBinaryDir
+  $out = Join-Path $root "out/calibration"
+}
+elseif (Test-Path (Join-Path $packagedBinaryDir "hax.exe")) {
+  $binaryDir = $packagedBinaryDir
+  $out = Join-Path $env:LOCALAPPDATA "HaxPerformanceRuntime/calibration"
+}
+else {
+  throw "hax.exe was not found. Build the app or use the packaged distribution."
+}
+
+$exe = Join-Path $binaryDir "hax.exe"
+$probe = Join-Path $binaryDir "hax_system_probe.exe"
+$analyzer = Join-Path $binaryDir "hax_capture_analyzer.exe"
 
 foreach ($required in @($exe, $probe, $analyzer)) {
   if (-not (Test-Path $required)) {
-    throw "Missing build artifact: $required. Run scripts/build.ps1 -App first."
+    throw "Missing calibration artifact: $required"
   }
 }
 
-$presentMonCommand = Get-Command $PresentMon -ErrorAction SilentlyContinue
-if (-not $presentMonCommand) {
-  throw "PresentMon console application is required. Pass -PresentMon with its executable path."
+$presentMonExecutable = $null
+
+if (-not [string]::IsNullOrWhiteSpace($PresentMon)) {
+  if (Test-Path $PresentMon) {
+    $presentMonExecutable = (Resolve-Path $PresentMon).Path
+  }
+  else {
+    $presentMonCommand = Get-Command $PresentMon -ErrorAction SilentlyContinue
+    if ($presentMonCommand) {
+      $presentMonExecutable = $presentMonCommand.Source
+    }
+  }
+
+  if (-not $presentMonExecutable) {
+    throw "Requested PresentMon executable could not be resolved: $PresentMon"
+  }
+}
+else {
+  $presentMonCommand = Get-Command "PresentMon.exe" -ErrorAction SilentlyContinue
+  if ($presentMonCommand) {
+    $presentMonExecutable = $presentMonCommand.Source
+  }
+  else {
+    $ensureScript = Join-Path $PSScriptRoot "ensure-presentmon.ps1"
+    if (-not (Test-Path $ensureScript)) {
+      throw "PresentMon is unavailable and ensure-presentmon.ps1 is missing."
+    }
+
+    $presentMonExecutable = & $ensureScript | Select-Object -Last 1
+  }
 }
 
-$out = Join-Path $root "out/calibration"
+if (-not (Test-Path $presentMonExecutable)) {
+  throw "PresentMon executable is unavailable: $presentMonExecutable"
+}
+
 New-Item -ItemType Directory -Force -Path $out | Out-Null
 
 $probeData = @{}
@@ -133,7 +178,7 @@ try {
         "--track_hybrid_present",
         "--no_console_stats"
       )
-      & $PresentMon @pmArgs
+      & $presentMonExecutable @pmArgs
 
       if ($LASTEXITCODE -ne 0) {
         throw "PresentMon failed for $($candidate.Name) with exit code $LASTEXITCODE."
@@ -169,7 +214,7 @@ try {
       "--track_hybrid_present",
       "--no_console_stats"
     )
-    & $PresentMon @repeatPmArgs
+    & $presentMonExecutable @repeatPmArgs
 
     if ($LASTEXITCODE -ne 0) {
       throw "PresentMon failed for repeated baseline with exit code $LASTEXITCODE."
