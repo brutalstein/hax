@@ -75,6 +75,24 @@ foreach ($frame in $framePolicies) {
   }
 }
 
+$baselineName = "frame-default_gpu-default_cpu-default_prio-normal"
+$baseline = $candidates | Where-Object { $_.Name -eq $baselineName } | Select-Object -First 1
+if (-not $baseline) {
+  throw "Internal error: baseline candidate was not generated."
+}
+
+$remaining = @($candidates | Where-Object { $_.Name -ne $baselineName })
+if ($remaining.Count -gt 1) {
+  $remaining = @($remaining | Get-Random -Count $remaining.Count -SetSeed 1548037)
+}
+
+$orderedCandidates = [System.Collections.Generic.List[object]]::new()
+$orderedCandidates.Add($baseline)
+foreach ($candidate in $remaining) {
+  $orderedCandidates.Add($candidate)
+}
+$candidates = $orderedCandidates
+
 Write-Host ""
 Write-Host "Hax hardware-adaptive calibration"
 Write-Host "  CPU sets: $($probeData['CPU_SET_COUNT'])"
@@ -82,7 +100,7 @@ Write-Host "  Heterogeneous CPU: $($probeData['HETEROGENEOUS_CPU'])"
 Write-Host "  Hardware GPUs: $($probeData['GPU_COUNT'])"
 Write-Host "  Display: $($probeData['DISPLAY_WIDTH'])x$($probeData['DISPLAY_HEIGHT']) @ $($probeData['REFRESH_HZ']) Hz"
 Write-Host "  AC power: $($probeData['ON_AC'])"
-Write-Host "  Candidate count: $($candidates.Count)"
+Write-Host "  Candidate count: $($candidates.Count) + baseline repeat"
 Write-Host ""
 
 if ($probeData["ON_AC"] -eq "0") {
@@ -131,6 +149,40 @@ try {
       Get-Process -Name "hax" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
       Start-Sleep -Milliseconds 750
     }
+  }
+
+  $repeatName = "$baselineName" + "__repeat"
+  $repeatCsv = Join-Path $out "$repeatName.csv"
+  if (Test-Path $repeatCsv) {
+    Remove-Item $repeatCsv -Force
+  }
+
+  Write-Host "Capturing $repeatName..."
+  $repeatProcess = Start-Process -FilePath $exe -ArgumentList $baseline.Args -PassThru
+  try {
+    Start-Sleep -Seconds 2
+    $repeatPmArgs = @(
+      "--process_name", "hax.exe",
+      "--timed", "$Seconds",
+      "--output_file", $repeatCsv,
+      "--terminate_after_timed",
+      "--track_hybrid_present",
+      "--no_console_stats"
+    )
+    & $PresentMon @repeatPmArgs
+
+    if ($LASTEXITCODE -ne 0) {
+      throw "PresentMon failed for repeated baseline with exit code $LASTEXITCODE."
+    }
+
+    if (-not (Test-Path $repeatCsv)) {
+      throw "PresentMon did not create repeated baseline capture."
+    }
+
+    $analyzerArguments.Add("$repeatName=$repeatCsv")
+  }
+  finally {
+    Get-Process -Name "hax" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
   }
 }
 finally {
