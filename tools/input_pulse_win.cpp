@@ -1,8 +1,8 @@
 #include <windows.h>
 
 #include <algorithm>
-#include <charconv>
 #include <chrono>
+#include <string>
 #include <string_view>
 #include <thread>
 
@@ -19,18 +19,11 @@ int parse_int_arg(
       continue;
     }
 
-    const auto value = arg.substr(prefix.size());
-    int parsed = fallback;
-    const auto* first =
-        reinterpret_cast<const char*>(value.data());
-    (void)first;
-
     try {
-      parsed = std::stoi(std::wstring(value));
+      return std::stoi(std::wstring(arg.substr(prefix.size())));
     } catch (...) {
       return fallback;
     }
-    return parsed;
   }
   return fallback;
 }
@@ -47,9 +40,11 @@ bool focus_benchmark_window() {
         return true;
       }
     }
+
     std::this_thread::sleep_for(
         std::chrono::milliseconds(50));
   }
+
   return false;
 }
 
@@ -69,24 +64,18 @@ bool send_f24_pulse() {
 }  // namespace
 
 int wmain(int argc, wchar_t** argv) {
-  const int seconds =
-      std::clamp(
-          parse_int_arg(
-              argc, argv, L"--seconds=", 10),
-          1,
-          300);
-  const int delay_ms =
-      std::clamp(
-          parse_int_arg(
-              argc, argv, L"--delay-ms=", 1200),
-          0,
-          10000);
-  const int interval_ms =
-      std::clamp(
-          parse_int_arg(
-              argc, argv, L"--interval-ms=", 50),
-          10,
-          1000);
+  const int seconds = std::clamp(
+      parse_int_arg(argc, argv, L"--seconds=", 10),
+      1,
+      300);
+  const int delay_ms = std::clamp(
+      parse_int_arg(argc, argv, L"--delay-ms=", 500),
+      0,
+      10000);
+  const int interval_ms = std::clamp(
+      parse_int_arg(argc, argv, L"--interval-ms=", 50),
+      10,
+      1000);
 
   std::this_thread::sleep_for(
       std::chrono::milliseconds(delay_ms));
@@ -103,6 +92,7 @@ int wmain(int argc, wchar_t** argv) {
     if (!send_f24_pulse()) {
       return 3;
     }
+
     std::this_thread::sleep_for(
         std::chrono::milliseconds(interval_ms));
   }
