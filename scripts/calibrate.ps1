@@ -12,7 +12,7 @@ if ($Seconds -lt 5) {
 
 $root = Split-Path -Parent $PSScriptRoot
 $sourceBinaryDir = Join-Path $root "build/$Configuration"
-$packagedBinaryDir = Join-Path $root "bin"
+$packagedBinaryDir = $root
 
 if (Test-Path (Join-Path $sourceBinaryDir "Haxball App.exe")) {
   $binaryDir = $sourceBinaryDir
