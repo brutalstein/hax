@@ -59,6 +59,7 @@ struct Summary {
   double frame_p50_ms{0.0};
   double frame_p99_ms{0.0};
   double frame_mad_ms{0.0};
+  double frame_drift_ratio{0.0};
   double present_to_display_p95_ms{0.0};
   double mean_latency_ms{0.0};
   double latency_standard_error_ms{0.0};
@@ -80,6 +81,7 @@ struct EvaluatedCandidate {
 struct OptimizerConfig {
   double max_dropped_frame_ratio{0.01};
   double minimum_thermal_headroom_c{8.0};
+  double maximum_frame_drift_ratio{0.08};
   std::size_t minimum_samples{120};
   double minimum_improvement_ratio{0.01};
 
