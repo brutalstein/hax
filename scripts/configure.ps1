@@ -11,7 +11,6 @@ $build = Join-Path $root "build"
 $args = @(
   "-S", $root,
   "-B", $build,
-  "-G", "Visual Studio 17 2022",
   "-A", "x64",
   "-DHAX_BUILD_TESTS=ON",
   "-DHAX_BUILD_BENCHMARKS=ON"
