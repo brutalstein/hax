@@ -1,191 +1,80 @@
-# Hax Performance Runtime
+<p align="center">
+  <img src="assets/windows/haxball_app.ico" width="128" alt="Haxball App icon">
+</p>
+
+# Haxball App
 
 [![Core CI](https://github.com/brutalstein/hax/actions/workflows/core-ci.yml/badge.svg)](https://github.com/brutalstein/hax/actions/workflows/core-ci.yml)
-[![Windows CEF App](https://github.com/brutalstein/hax/actions/workflows/windows-app.yml/badge.svg)](https://github.com/brutalstein/hax/actions/workflows/windows-app.yml)
+[![Windows App](https://github.com/brutalstein/hax/actions/workflows/windows-app.yml/badge.svg)](https://github.com/brutalstein/hax/actions/workflows/windows-app.yml)
 
-An **unofficial, Windows-first native performance runtime** for the official HaxBall web client.
+## Download
 
-Hax does not reimplement, patch, decompile, or reverse-engineer HaxBall. It loads the official `https://www.haxball.com/play` page in a pinned Chromium Embedded Framework (CEF) runtime and optimizes the environment around it.
+**[Download Haxball App for Windows x64](https://github.com/brutalstein/hax/releases/download/latest/Haxball-App-Windows-x64.zip)**
 
-## Goal
+Haxball App is an unofficial Windows-first native performance client for the official HaxBall web game. It loads the official HaxBall site inside a pinned Chromium Embedded Framework runtime and calibrates the local machine for minimum stable latency rather than simply chasing the largest FPS counter.
 
-The target is **minimum stable input-to-display latency**, not the largest FPS counter.
+## Install
 
-A configuration is accepted only when measured data beats the browser-default baseline while remaining stable across tail latency, frame-time jitter, sustained drift, and a repeated-baseline consistency check.
+1. Download the ZIP above.
+2. Extract it.
+3. Double-click **Install Haxball App.cmd**.
 
-~~~text
-HID
- └─> Windows
-     └─> Chromium input event
-         └─> official HaxBall
-             └─> desynchronized canvas
-                 └─> Chromium compositor
-                     └─> display
-~~~
+The installer copies the application to:
 
-There is no custom Raw Input -> IPC -> JavaScript gameplay path.
+```text
+%LOCALAPPDATA%\Programs\Haxball App
+```
 
-## Architecture
+It creates **Haxball App** shortcuts on the Desktop and Start Menu. The supplied H icon is embedded directly in **Haxball App.exe** and is also assigned to the native CEF window, so Explorer, the desktop shortcut and the Windows taskbar use the same application icon.
 
-~~~text
-Win32 / C++20
-├─ hax_core
-│  ├─ robust statistics
-│  ├─ hardware-pruned exhaustive candidate generation
-│  └─ constrained multi-objective optimizer
-├─ hax_platform
-│  ├─ Windows CPU-set topology
-│  ├─ DXGI GPU inventory
-│  ├─ display / AC-power probe
-│  └─ reversible process-local scheduling/QoS policy
-├─ hax
-│  ├─ pinned CEF / Chromium
-│  ├─ official HaxBall URL
-│  └─ normal windowed GPU rendering
-└─ calibration
-   ├─ desynchronized-canvas workload
-   ├─ PresentMon capture
-   ├─ calibration-only F24 input pulses
-   ├─ process + swapchain stream isolation
-   └─ persisted per-machine winner
-~~~
+On first launch, Haxball App performs hardware-adaptive calibration and stores the measured winning profile before opening the official HaxBall page.
 
-See `docs/ARCHITECTURE.md` and `docs/ALGORITHM_ANALYSIS.md`.
+## What it optimizes
 
-## Windows package
+The calibration engine can evaluate up to 36 hardware-relevant configurations across frame policy, GPU selection, CPU Sets and process priority. Selection uses robust timing evidence including p50/p99 latency, p99 frame time, MAD jitter, PresentMon display timing, CPU/GPU utilization, hybrid/cross-adapter presentation and sustained frame-time drift.
 
-The **Windows CEF App** workflow produces the downloadable artifact:
-
-~~~text
-HaxPerformanceRuntime-win64
-~~~
-
-It contains the native runtime, CEF payload, calibration tools, scripts, notices, and documentation.
-
-## First run
-
-From the extracted package:
-
-~~~powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run.ps1
-~~~
-
-When no machine profile exists, the launcher runs one-time hardware-adaptive calibration and then launches HaxBall.
-
-PresentMon 2.6.0 x64 is downloaded from its official GitHub release only when required and is verified against the pinned SHA-256 before execution.
-
-Recalibrate after a major GPU driver, Windows, monitor, or hardware change:
-
-~~~powershell
-.\scripts\run.ps1 -Recalibrate
-~~~
-
-Diagnostic launch without calibration:
-
-~~~powershell
-.\scripts\run.ps1 -SkipCalibration
-~~~
+Heavy PresentMon/ETW capture is used only during calibration and is kept out of normal gameplay.
 
 The selected machine profile is stored at:
 
-~~~text
-%LOCALAPPDATA%\HaxPerformanceRuntime\profile.ini
-~~~
+```text
+%LOCALAPPDATA%\HaxballApp\profile.ini
+```
 
-## Search space
+A hardware/runtime fingerprint invalidates stale calibration when relevant hardware, display, driver, Windows or CEF context changes.
 
-Calibration exhaustively tests the hardware-relevant configuration space after pruning impossible or irrelevant branches:
+## Performance boundaries
 
-- frame policy: browser default / uncapped;
-- GPU policy: system default / integrated / high-performance when multiple hardware adapters exist;
-- CPU policy: Windows scheduler / highest-EfficiencyClass CPU Sets on heterogeneous CPUs;
-- process priority: normal / above-normal / high.
-
-Maximum size is **36 candidates + one repeated baseline**. A single-GPU homogeneous desktop tests only 6 + baseline repeat.
-
-During calibration, a dedicated helper sends harmless F24 keyboard pulses to the local synthetic benchmark and the canvas visibly reacts to them. This gives PresentMon a repeatable keyboard-input-to-photon signal without changing HaxBall gameplay input.
-
-The optimizer evaluates median and p99 latency, p99 frame time, MAD frame-time jitter, present-to-display timing, cross-adapter presentation, uncertainty, and sustained first-vs-last frame-time drift. The complete calibration is rejected if its repeated baseline changes by more than 8%.
-
-## Reproducible dependencies
-
-CEF is pinned to:
-
-~~~text
-154.0.28+g564dd6c+chromium-154.0.8037.58
-~~~
-
-The CEF archive is hash-verified during acquisition.
-
-Calibration tooling is pinned to:
-
-~~~text
-PresentMon 2.6.0 x64
-SHA-256:
-b2a706bc6ad475749e3b7e3409263aa1e6906d45bdcf993f6dbc0f660188f1af
-~~~
+- no HaxBall source modification or reverse engineering;
+- no replacement gameplay-input path;
+- no REALTIME priority;
+- no global HPET/BCD/registry gaming tweaks;
+- no assumption that the discrete GPU is always lower latency;
+- no off-screen CEF rendering;
+- no permanent OS tuning changes.
 
 ## Developer build
 
-Requirements:
-
-- Windows 10/11 x64;
-- Visual Studio 2022 with Desktop development with C++;
-- CMake 3.24+.
-
-~~~powershell
+```powershell
 .\scripts\build.ps1 -Configuration Release -App
 .\scripts\run.ps1
-~~~
+```
 
-Or use CMake presets:
+Or:
 
-~~~powershell
+```powershell
 cmake --preset windows-app
 cmake --build --preset windows-release
 ctest --preset windows
-~~~
+```
 
-Portable core:
+See `docs/ARCHITECTURE.md`, `docs/ALGORITHM_ANALYSIS.md`, `docs/BENCHMARKING.md` and `docs/VALIDATION.md` for the implementation and evidence model.
 
-~~~powershell
-cmake --preset core
-cmake --build --preset core-release
-ctest --preset core
-~~~
+## Engine and measurement dependencies
 
-## Experimental switches
-
-~~~text
---hax-fps=default|uncapped
---hax-gpu=default|low|high
---hax-cpu=default|performance
---hax-priority=normal|above|high
---hax-benchmark
---hax-no-profile
-~~~
-
-## Deliberate non-features
-
-- no HaxBall source modification;
-- no gameplay-input reinjection;
-- no REALTIME priority;
-- no global HPET/BCD/registry gaming tweaks;
-- no assumption that the discrete GPU is always best;
-- no off-screen CEF rendering;
-- no permanent OS changes;
-- no generic latency claims without hardware evidence.
-
-Hardware-specific performance claims require captured measurements on that hardware. See `docs/BENCHMARKING.md`.
-
-## Validation
-
-The portable core is continuously built and tested on Linux and Windows. The native Windows CEF runtime is compiled and linked in CI against the pinned CEF distribution, and the workflow packages a self-contained Windows artifact.
-
-The current 36-candidate optimizer micro-benchmark and validation boundary are recorded in `docs/VALIDATION.md`.
+- CEF 154.0.28 + Chromium 154.0.8037.58
+- PresentMon 2.6.0 x64, SHA-256 verified before calibration use
 
 ## Security
 
-The official HaxBall page receives no privileged native JavaScript bridge.
-
-Current development builds still use CEF's sandbox-disabled executable mode. Migration to CEF's current Windows bootstrap/sandbox packaging is explicitly tracked as a release-hardening gate. See `SECURITY.md`.
+The official remote HaxBall page receives no privileged native JavaScript bridge. The current development build still uses CEF's sandbox-disabled executable mode; see `SECURITY.md` for the explicit public-release hardening boundary.
