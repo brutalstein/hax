@@ -22,6 +22,15 @@ struct Capture {
   hax::core::CandidateProfile profile;
   hax::core::SampleSeries samples;
   std::string latency_source;
+  std::string stream_id;
+};
+
+struct StreamSamples {
+  std::vector<double> input_latency;
+  std::vector<double> click_latency;
+  std::vector<double> display_latency;
+  std::vector<double> frame_time;
+  std::vector<double> present_to_display;
 };
 
 std::vector<std::string> parse_csv_row(const std::string& line) {
@@ -157,44 +166,76 @@ std::optional<Capture> load_capture(
   const auto display_latency = column(columns, "DisplayLatency");
   const auto between_presents = column(columns, "MsBetweenPresents");
   const auto until_displayed = column(columns, "MsUntilDisplayed");
+  const auto process_id = column(columns, "ProcessID");
+  const auto swap_chain = column(columns, "SwapChainAddress");
 
-  std::vector<double> input_latency;
-  std::vector<double> click_latency;
-  std::vector<double> display;
-  std::vector<double> frame;
-  std::vector<double> present_to_display;
+  std::map<std::string, StreamSamples> streams;
 
   while (std::getline(input, line)) {
     if (!line.empty() && line.back() == '\r') {
       line.pop_back();
     }
+
     const auto row = parse_csv_row(line);
-    append_if_valid(row, all_input, input_latency);
-    append_if_valid(row, click_input, click_latency);
-    append_if_valid(row, display_latency, display);
-    append_if_valid(row, between_presents, frame);
-    append_if_valid(row, until_displayed, present_to_display);
+    std::string key = "default";
+
+    if (process_id && *process_id < row.size()) {
+      key = row[*process_id];
+    }
+    if (swap_chain && *swap_chain < row.size()) {
+      key += ":";
+      key += row[*swap_chain];
+    }
+
+    auto& stream = streams[key];
+    append_if_valid(row, all_input, stream.input_latency);
+    append_if_valid(row, click_input, stream.click_latency);
+    append_if_valid(row, display_latency, stream.display_latency);
+    append_if_valid(row, between_presents, stream.frame_time);
+    append_if_valid(row, until_displayed, stream.present_to_display);
   }
+
+  if (streams.empty()) {
+    std::cerr << "Capture contains no frame streams: " << path << '\n';
+    return std::nullopt;
+  }
+
+  const auto dominant = std::max_element(
+      streams.begin(),
+      streams.end(),
+      [](const auto& lhs, const auto& rhs) {
+        const auto lhs_frames = lhs.second.frame_time.size();
+        const auto rhs_frames = rhs.second.frame_time.size();
+        if (lhs_frames != rhs_frames) {
+          return lhs_frames < rhs_frames;
+        }
+        return lhs.second.display_latency.size() <
+               rhs.second.display_latency.size();
+      });
 
   constexpr std::size_t minimum_input_samples = 120;
 
   Capture capture;
   capture.label = label;
   capture.profile = profile_for(label);
+  capture.stream_id = dominant->first;
 
-  if (input_latency.size() >= minimum_input_samples) {
-    capture.samples.pc_latency_ms = std::move(input_latency);
+  auto selected = std::move(dominant->second);
+
+  if (selected.input_latency.size() >= minimum_input_samples) {
+    capture.samples.pc_latency_ms = std::move(selected.input_latency);
     capture.latency_source = "all-input-to-photon";
-  } else if (click_latency.size() >= minimum_input_samples) {
-    capture.samples.pc_latency_ms = std::move(click_latency);
+  } else if (selected.click_latency.size() >= minimum_input_samples) {
+    capture.samples.pc_latency_ms = std::move(selected.click_latency);
     capture.latency_source = "click-to-photon";
   } else {
-    capture.samples.pc_latency_ms = std::move(display);
+    capture.samples.pc_latency_ms = std::move(selected.display_latency);
     capture.latency_source = "frame-start-to-display";
   }
 
-  capture.samples.frame_time_ms = std::move(frame);
-  capture.samples.present_to_display_ms = std::move(present_to_display);
+  capture.samples.frame_time_ms = std::move(selected.frame_time);
+  capture.samples.present_to_display_ms =
+      std::move(selected.present_to_display);
 
   // Uncapped rendering normally produces presents that are superseded before
   // scan-out. They are not classified as stability failures here.
@@ -280,6 +321,7 @@ int main(int argc, char** argv) {
     std::cout
         << "RESULT label=" << capture.label
         << " source=" << capture.latency_source
+        << " stream=" << capture.stream_id
         << " feasible=" << (result.feasible ? "yes" : "no");
 
     if (result.feasible) {
@@ -291,6 +333,7 @@ int main(int argc, char** argv) {
           << " latency_p99_ms=" << result.summary.latency_p99_ms
           << " frame_p99_ms=" << result.summary.frame_p99_ms
           << " frame_mad_ms=" << result.summary.frame_mad_ms
+          << " frame_drift_ratio=" << result.summary.frame_drift_ratio
           << " present_p95_ms="
           << result.summary.present_to_display_p95_ms;
     } else {
