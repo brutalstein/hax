@@ -13,7 +13,8 @@ For each candidate c, samples are summarized as:
 - P95: p95 present-to-display time;
 - CPU/GPU utilization;
 - thermal headroom;
-- dropped-frame ratio.
+- dropped-frame ratio;
+- frame-time drift between the first and last 20% of the capture.
 
 A candidate is rejected when:
 
@@ -21,6 +22,7 @@ A candidate is rejected when:
 sample_count < N_min
 dropped_ratio > D_max
 thermal_headroom < T_min
+positive frame_time_drift > 8%
 timings invalid
 ```
 
@@ -60,6 +62,7 @@ The implementation does not assume Gaussian frame-time distributions.
 - p50 represents normal experience;
 - p99 protects against tail spikes;
 - MAD is robust to isolated outliers;
+- first-vs-last 20% median drift rejects sustained degradation such as thermal/scheduler collapse;
 - standard error is used only as a confidence penalty.
 
 For m timing samples, vectors are sorted once:
