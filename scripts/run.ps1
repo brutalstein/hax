@@ -8,8 +8,8 @@ param(
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
-$sourceExe = Join-Path $root "build/Release/hax.exe"
-$packagedExe = Join-Path $root "bin/hax.exe"
+$sourceExe = Join-Path $root "build/Release/Haxball App.exe"
+$packagedExe = Join-Path $root "bin/Haxball App.exe"
 
 if (Test-Path $sourceExe) {
   $exe = $sourceExe
@@ -20,12 +20,12 @@ elseif (Test-Path $packagedExe) {
   $binaryDir = Split-Path -Parent $packagedExe
 }
 else {
-  throw "hax.exe was not found. Build the app or use the packaged distribution."
+  throw "Haxball App.exe was not found. Build the app or use the packaged distribution."
 }
 
 $probe = Join-Path $binaryDir "hax_system_probe.exe"
 $fingerprintScript = Join-Path $PSScriptRoot "hardware-fingerprint.ps1"
-$profilePath = Join-Path $env:LOCALAPPDATA "HaxPerformanceRuntime/profile.ini"
+$profilePath = Join-Path $env:LOCALAPPDATA "HaxballApp/profile.ini"
 
 $currentFingerprint = $null
 if ((Test-Path $probe) -and (Test-Path $fingerprintScript)) {
