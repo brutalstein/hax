@@ -72,6 +72,18 @@ int main() {
   require(faster.feasible, "faster feasible");
   require(faster.score < baseline.score, "faster score should be lower");
 
+  auto hybrid_samples = samples(2.2, 0.85, 0.12);
+  hybrid_samples.hybrid_present_ratio = 1.0;
+  const auto hybrid =
+      optimizer.evaluate(
+          faster_profile,
+          hybrid_samples,
+          baseline_summary);
+  require(hybrid.feasible, "hybrid candidate feasible");
+  require(
+      hybrid.score > faster.score,
+      "cross-adapter presentation receives a tie-break penalty");
+
   auto hot_samples = samples(2.0, 0.8, 0.1);
   hot_samples.minimum_thermal_headroom_c = 2.0;
   const auto hot =
