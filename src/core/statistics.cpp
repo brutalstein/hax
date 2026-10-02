@@ -35,6 +35,21 @@ std::vector<double> sorted_copy(const std::vector<double>& values) {
   return copy;
 }
 
+double segment_median(
+    const std::vector<double>& values,
+    const std::size_t begin,
+    const std::size_t end) {
+  if (begin >= end || end > values.size()) {
+    return 0.0;
+  }
+
+  std::vector<double> segment(
+      values.begin() + static_cast<std::ptrdiff_t>(begin),
+      values.begin() + static_cast<std::ptrdiff_t>(end));
+  std::sort(segment.begin(), segment.end());
+  return percentile_sorted(segment, 0.5);
+}
+
 }  // namespace
 
 double percentile_sorted(const std::vector<double>& sorted, const double q) {
@@ -94,6 +109,29 @@ Summary summarize(const SampleSeries& samples) {
   out.frame_p99_ms = percentile_sorted(frame, 0.99);
   out.frame_mad_ms =
       median_absolute_deviation(samples.frame_time_ms, out.frame_p50_ms);
+
+  const std::size_t drift_window =
+      std::max<std::size_t>(
+          1,
+          samples.frame_time_ms.size() / 5);
+  const double first_median =
+      segment_median(
+          samples.frame_time_ms,
+          0,
+          drift_window);
+  const double last_median =
+      segment_median(
+          samples.frame_time_ms,
+          samples.frame_time_ms.size() - drift_window,
+          samples.frame_time_ms.size());
+
+  if (first_median > 0.0) {
+    out.frame_drift_ratio =
+        std::max(
+            0.0,
+            (last_median - first_median) / first_median);
+  }
+
   out.present_to_display_p95_ms =
       present.empty() ? 0.0 : percentile_sorted(present, 0.95);
   out.mean_latency_ms = mean(samples.pc_latency_ms);
