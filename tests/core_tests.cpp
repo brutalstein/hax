@@ -46,6 +46,19 @@ hax::core::SampleSeries samples(
 
 int main() {
   {
+    const hax::core::CandidateProfile defaults;
+    require(
+        defaults.frame == hax::core::FramePolicy::browser_default,
+        "unprofiled launch uses browser-default frame policy");
+    require(
+        defaults.priority == hax::core::PriorityPolicy::normal,
+        "unprofiled launch uses normal process priority");
+    require(
+        !defaults.disable_vsync,
+        "unprofiled launch keeps browser vsync behavior");
+  }
+
+  {
     const std::vector<double> values{1.0, 2.0, 3.0, 4.0, 5.0};
     require(
         std::abs(hax::core::percentile_sorted(values, 0.5) - 3.0) < 1e-9,
