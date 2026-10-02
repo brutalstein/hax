@@ -46,6 +46,12 @@ if(WIN32)
   add_executable(hax_system_probe tools/probe_system.cpp)
   target_link_libraries(hax_system_probe PRIVATE hax_platform)
   hax_set_warnings(hax_system_probe)
+
+  add_executable(hax_input_pulse tools/input_pulse_win.cpp)
+  target_link_libraries(hax_input_pulse PRIVATE user32)
+  target_compile_definitions(
+    hax_input_pulse PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX UNICODE _UNICODE)
+  hax_set_warnings(hax_input_pulse)
 endif()
 
 if(HAX_BUILD_TESTS)
