@@ -276,7 +276,7 @@ $profilePath = Join-Path $profileDir "profile.ini"
   "gpu=$gpu"
   "cpu=$cpu"
   "priority=$priority"
-) | Set-Content -Path $profilePath -Encoding utf8
+) | Set-Content -Path $profilePath -Encoding ascii
 
 Write-Host ""
 Write-Host "Calibration complete."
