@@ -9,6 +9,8 @@
 
 ## Hardware-adaptive calibration protocol
 
+The calibration script uses a dedicated calibration-only input source. A tiny Win32 helper sends F24 key pulses every 50 ms while the synthetic benchmark page is focused; the page turns each pulse into a large visible canvas transition. F24 is deliberately unused by HaxBall, and this helper is never part of normal gameplay. PresentMon defines All Input To Photon as the time from the earliest keyboard or mouse interaction contributing to a displayed frame.
+
 The calibration script:
 
 1. probes CPU Sets, heterogeneous-core topology, hardware GPU count, display mode and AC/DC power;
@@ -36,6 +38,8 @@ Relevant fields include:
 - ProcessID
 - SwapChainAddress
 - HybridPresent
+
+Input pulses make MsAllInputToPhotonLatency deterministic enough to be the preferred calibration signal instead of routinely falling back to frame-start/display latency.
 
 The optimizer summarizes p50/p99 latency, p99 frame time, frame MAD, present-to-display timing and sustained frame-time drift.
 
