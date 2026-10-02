@@ -14,7 +14,24 @@ int run(HINSTANCE instance) {
   CefMainArgs main_args(instance);
   const auto options = hax::app::parse_launch_options();
 
-  (void)hax::platform::apply_runtime_policy(options.profile);
+  const auto applied =
+      hax::platform::apply_runtime_policy(options.profile);
+
+  if (options.benchmark_mode) {
+    const bool priority_ok = applied.priority_applied;
+    const bool cpu_ok =
+        options.profile.cpu !=
+            hax::core::CpuPolicy::prefer_performance_cores ||
+        applied.cpu_sets_applied;
+    const bool power_ok =
+        (!options.profile.disable_power_throttling &&
+         !options.profile.honor_timer_resolution) ||
+        applied.power_policy_applied;
+
+    if (!priority_ok || !cpu_ok || !power_ok) {
+      return 3;
+    }
+  }
 
   CefRefPtr<hax::app::App> app(new hax::app::App(options));
 
@@ -40,8 +57,11 @@ int run(HINSTANCE instance) {
     const auto cache =
         std::filesystem::path(local_app_data) /
         L"HaxPerformanceRuntime" / L"cef";
-    std::filesystem::create_directories(cache);
-    CefString(&settings.root_cache_path) = cache.wstring();
+    std::error_code error;
+    std::filesystem::create_directories(cache, error);
+    if (!error) {
+      CefString(&settings.root_cache_path) = cache.wstring();
+    }
   }
 
   if (!CefInitialize(main_args, settings, app, sandbox_info)) {
