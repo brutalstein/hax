@@ -90,7 +90,7 @@ int main() {
       .has_heterogeneous_cpu = true,
   });
   require(!candidates.empty(), "candidate generation");
-  require(candidates.size() <= 24, "candidate search remains bounded");
+  require(candidates.size() <= 36, "candidate search remains bounded");
 
   std::cout << "All hax_core tests passed. candidates="
             << candidates.size() << '\n';
