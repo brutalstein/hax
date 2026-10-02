@@ -1,6 +1,6 @@
 param(
   [Parameter(Mandatory=$true)]
-  [string]$SourceImage,
+  [string]$SourceBase64,
 
   [Parameter(Mandatory=$true)]
   [string]$OutputIcon
@@ -9,8 +9,8 @@ param(
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Drawing
 
-if (-not (Test-Path $SourceImage)) {
-  throw "Source icon not found: $SourceImage"
+if (-not (Test-Path $SourceBase64)) {
+  throw "Base64 icon source not found: $SourceBase64"
 }
 
 function Write-ClassicIconImage {
@@ -26,7 +26,6 @@ function Write-ClassicIconImage {
   $writer = New-Object System.IO.BinaryWriter($stream)
 
   try {
-    # BITMAPINFOHEADER. ICO DIB height includes XOR + AND masks.
     $writer.Write([uint32]40)
     $writer.Write([int32]$size)
     $writer.Write([int32]($size * 2))
@@ -39,7 +38,6 @@ function Write-ClassicIconImage {
     $writer.Write([uint32]0)
     $writer.Write([uint32]0)
 
-    # XOR bitmap: BGRA, bottom-up.
     for ($y = $size - 1; $y -ge 0; --$y) {
       for ($x = 0; $x -lt $size; ++$x) {
         $pixel = $Bitmap.GetPixel($x, $y)
@@ -50,7 +48,6 @@ function Write-ClassicIconImage {
       }
     }
 
-    # AND mask: transparent pixels are 1. Rows are DWORD-aligned.
     for ($y = $size - 1; $y -ge 0; --$y) {
       [byte[]]$mask = New-Object byte[] $maskRowBytes
 
@@ -77,11 +74,25 @@ function Write-ClassicIconImage {
   }
 }
 
-$sourceImageObject = [System.Drawing.Image]::FromFile($SourceImage)
+$base64 = (Get-Content -LiteralPath $SourceBase64 -Raw).Trim()
+try {
+  [byte[]]$pngBytes = [Convert]::FromBase64String($base64)
+}
+catch {
+  throw "Icon source is not valid base64."
+}
+
+$imageStream = New-Object System.IO.MemoryStream(,$pngBytes)
+$sourceImage = [System.Drawing.Image]::FromStream(
+  $imageStream,
+  $true,
+  $true
+)
+
 $images = New-Object System.Collections.Generic.List[object]
 
 try {
-  foreach ($size in @(16, 32, 48, 256)) {
+  foreach ($size in @(16, 24, 32, 48, 64, 128, 256)) {
     $bitmap = New-Object System.Drawing.Bitmap(
       $size,
       $size,
@@ -104,7 +115,7 @@ try {
         [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 
       $graphics.DrawImage(
-        $sourceImageObject,
+        $sourceImage,
         0,
         0,
         $size,
@@ -128,9 +139,8 @@ try {
   }
 }
 finally {
-  if ($sourceImageObject) {
-    $sourceImageObject.Dispose()
-  }
+  $sourceImage.Dispose()
+  $imageStream.Dispose()
 }
 
 $outputDirectory = Split-Path -Parent $OutputIcon
@@ -183,4 +193,4 @@ if (-not (Test-Path $OutputIcon)) {
   throw "Failed to generate Windows icon: $OutputIcon"
 }
 
-Write-Host "Generated RC-compatible Haxball App icon from PNG: $OutputIcon"
+Write-Host "Generated Haxball App icon: $OutputIcon"
