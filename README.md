@@ -9,7 +9,7 @@
 
 ## Download
 
-**[Download Haxball App for Windows x64](https://github.com/brutalstein/hax/releases/download/latest/Haxball-App-Windows-x64.zip)**
+**[Download Haxball App for Windows x64](https://github.com/brutalstein/hax/releases/latest/download/Haxball-App-Windows-x64.zip)**
 
 Haxball App is an unofficial Windows-first native performance client for the official HaxBall web game. It loads the official HaxBall site inside a pinned Chromium Embedded Framework runtime and calibrates the local machine for minimum stable latency rather than simply chasing the largest FPS counter.
 
