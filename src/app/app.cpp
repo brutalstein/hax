@@ -87,6 +87,7 @@ void App::OnBeforeChildProcessLaunch(
   }
 
   command_line->AppendSwitch("hax-no-profile");
+  command_line->AppendSwitch("hax-bootstrap-complete");
 }
 
 void App::OnContextInitialized() {
