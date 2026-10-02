@@ -31,6 +31,8 @@ struct StreamSamples {
   std::vector<double> display_latency;
   std::vector<double> frame_time;
   std::vector<double> present_to_display;
+  std::size_t hybrid_presents{0};
+  std::size_t hybrid_observations{0};
 };
 
 std::vector<std::string> parse_csv_row(const std::string& line) {
@@ -168,6 +170,7 @@ std::optional<Capture> load_capture(
   const auto until_displayed = column(columns, "MsUntilDisplayed");
   const auto process_id = column(columns, "ProcessID");
   const auto swap_chain = column(columns, "SwapChainAddress");
+  const auto hybrid_present = column(columns, "HybridPresent");
 
   std::map<std::string, StreamSamples> streams;
 
@@ -193,6 +196,16 @@ std::optional<Capture> load_capture(
     append_if_valid(row, display_latency, stream.display_latency);
     append_if_valid(row, between_presents, stream.frame_time);
     append_if_valid(row, until_displayed, stream.present_to_display);
+
+    if (hybrid_present && *hybrid_present < row.size()) {
+      const auto value = parse_number(row[*hybrid_present]);
+      if (value && (*value == 0.0 || *value == 1.0)) {
+        ++stream.hybrid_observations;
+        if (*value == 1.0) {
+          ++stream.hybrid_presents;
+        }
+      }
+    }
   }
 
   if (streams.empty()) {
@@ -236,6 +249,12 @@ std::optional<Capture> load_capture(
   capture.samples.frame_time_ms = std::move(selected.frame_time);
   capture.samples.present_to_display_ms =
       std::move(selected.present_to_display);
+
+  if (selected.hybrid_observations > 0) {
+    capture.samples.hybrid_present_ratio =
+        static_cast<double>(selected.hybrid_presents) /
+        static_cast<double>(selected.hybrid_observations);
+  }
 
   // Uncapped rendering normally produces presents that are superseded before
   // scan-out. They are not classified as stability failures here.
@@ -383,6 +402,8 @@ int main(int argc, char** argv) {
           << " frame_p99_ms=" << result.summary.frame_p99_ms
           << " frame_mad_ms=" << result.summary.frame_mad_ms
           << " frame_drift_ratio=" << result.summary.frame_drift_ratio
+          << " hybrid_present_ratio="
+          << result.summary.hybrid_present_ratio
           << " present_p95_ms="
           << result.summary.present_to_display_p95_ms;
     } else {
