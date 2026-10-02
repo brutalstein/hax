@@ -151,6 +151,11 @@ LaunchOptions parse_launch_options() {
       continue;
     }
 
+    if (arg == L"--hax-bootstrap-complete") {
+      options.bootstrap_complete = true;
+      continue;
+    }
+
     apply_command_line_setting(options, arg);
 
     if (arg.starts_with(L"--hax-url=")) {
