@@ -91,8 +91,8 @@ if(HAX_BUILD_APP)
   add_subdirectory("${CEF_LIBCEF_DLL_WRAPPER_PATH}" libcef_dll_wrapper)
   ADD_LOGICAL_TARGET("libcef_lib" "${CEF_LIB_RELEASE}" "${CEF_LIB_DEBUG}")
 
-  set(HAX_SOURCE_IMAGE
-    "${CMAKE_CURRENT_SOURCE_DIR}/assets/windows/haxball_app_source.png")
+  set(HAX_SOURCE_ICON_BASE64
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/windows/haxball_app_icon_128.b64")
   set(HAX_GENERATED_ICON
     "${CMAKE_CURRENT_BINARY_DIR}/haxball_app_rc.ico")
 
@@ -101,7 +101,7 @@ if(HAX_BUILD_APP)
       -NoProfile
       -ExecutionPolicy Bypass
       -File "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate-icon.ps1"
-      -SourceImage "${HAX_SOURCE_IMAGE}"
+      -SourceBase64 "${HAX_SOURCE_ICON_BASE64}"
       -OutputIcon "${HAX_GENERATED_ICON}"
     RESULT_VARIABLE HAX_ICON_RESULT
   )
