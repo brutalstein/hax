@@ -54,6 +54,7 @@ jobs:
             "build/Release/hax.exe",
             "build/Release/hax_system_probe.exe",
             "build/Release/hax_capture_analyzer.exe",
+            "build/Release/hax_input_pulse.exe",
             "build/Release/benchmark.html",
             "build/Release/libcef.dll"
           )
