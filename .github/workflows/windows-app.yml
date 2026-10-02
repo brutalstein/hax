@@ -85,6 +85,7 @@ jobs:
 
           Copy-Item "scripts/calibrate.ps1" $scripts
           Copy-Item "scripts/ensure-presentmon.ps1" $scripts
+          Copy-Item "scripts/hardware-fingerprint.ps1" $scripts
           Copy-Item "scripts/run.ps1" $scripts
           Copy-Item "docs/*" $docs
           Copy-Item "README.md","LICENSE","THIRD_PARTY_NOTICES.md" $stage
