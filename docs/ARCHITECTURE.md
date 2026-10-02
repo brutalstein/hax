@@ -64,9 +64,13 @@ System-default GPU is always a candidate. Multi-GPU machines can additionally te
 
 Windows default scheduling remains a candidate. Heterogeneous processors may additionally test the highest EfficiencyClass CPU Sets. The policy is retained only if calibration wins.
 
+## Calibration-only input measurement
+
+The benchmark path has a small Win32 input-pulse helper that sends F24 keyboard events at a fixed interval. The local benchmark page responds with a large canvas transition so PresentMon can observe keyboard-input-to-displayed-frame timing. The helper is not loaded or used during HaxBall gameplay and does not inject movement or game controls.
+
 ## Telemetry
 
-Heavy ETW/PresentMon capture is for calibration and regression testing. Gameplay mode should keep telemetry minimal to reduce observer effects.
+Heavy ETW/PresentMon capture is for calibration and regression testing. Gameplay mode keeps this measurement stack out of the gameplay path to reduce observer effects.
 
 ## Security release gate
 
