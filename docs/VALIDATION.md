@@ -2,44 +2,64 @@
 
 Date: 2026-10-02
 
-## Portable build/test
+## CI compile and test gates
 
-Environment used for the initial repository validation:
+The portable core is compiled and tested on both Linux and Windows for every main-branch change.
 
-- Linux container
-- GCC 14.2.0
-- CMake
-- C++20
-- HAX_BUILD_APP=OFF
-- tests and optimizer benchmark enabled
+The native Windows application is separately built on Windows Server 2022 / Visual Studio 2022 against the pinned CEF 154 distribution. The build gate verifies that the final payload contains at least:
 
-Commands:
+- hax.exe
+- hax_system_probe.exe
+- hax_capture_analyzer.exe
+- benchmark.html
+- libcef.dll
 
-```text
-cmake -S . -B build -DHAX_BUILD_APP=OFF -DHAX_BUILD_TESTS=ON -DHAX_BUILD_BENCHMARKS=ON
-cmake --build build --parallel
-ctest --test-dir build --output-on-failure
-./build/hax_optimizer_bench
-```
+The workflow also parses all PowerShell tooling before packaging the Windows artifact.
 
-Observed result:
+## Current optimizer micro-benchmark
 
-```text
+A successful Ubuntu CI run after the search space was expanded to the full 36-candidate maximum reported:
+
+~~~text
 100% tests passed, 0 tests failed out of 1
-evaluations=192 samples/eval=4096 total_ms=796.100 us/eval=4146.354 checksum=176.821
-```
+evaluations=288
+samples/eval=4096
+total_ms=1471.885
+us/eval=5110.711
+checksum=264.870
+~~~
 
-Interpretation:
+Why 288 evaluations:
 
-- the portable core compiles under the repository warning profile;
-- statistical/scoring invariants pass their unit tests;
-- the 24-candidate worst-case search-space scoring cost is tiny compared with multi-second hardware capture windows;
-- this synthetic micro-benchmark is not evidence of HaxBall input-latency improvement.
+~~~text
+36 maximum candidate profiles * 8 benchmark iterations = 288
+~~~
 
-## Windows / CEF validation
+This is a shared CI runner measurement. It proves that robust summarization/scoring overhead is small relative to multi-second real hardware captures; it is **not** a HaxBall input-latency result.
 
-The repository includes a Visual Studio 2022 x64 GitHub Actions build with the pinned CEF distribution. Its status is the compile gate for the native browser application.
+## Algorithm test coverage
 
-## Hardware latency validation
+The core test suite currently checks:
 
-No generic hardware-latency number is claimed here. Those results must come from PresentMon captures on specific machines using the protocol in BENCHMARKING.md.
+- percentile calculation;
+- feasible baseline evaluation;
+- preference for a genuinely lower-latency candidate;
+- thermal-headroom rejection;
+- sustained frame-time-drift rejection;
+- bounded hardware-adaptive candidate generation;
+- winner selection and hysteresis behavior.
+
+## Windows / CEF issues found by CI
+
+CI caught and the repository fixed real integration defects rather than hiding them:
+
+1. CEF 154 no longer exposes the old CefEnableHighDPISupport helper; the app now uses current Win32 Per-Monitor V2 DPI awareness.
+2. Official CEF binaries/libcef_dll_wrapper use the static MSVC runtime; all project targets now use a compatible runtime to prevent ABI/link mismatch.
+3. The CEF .tar.bz2 extractor was corrected to bzip2 mode.
+4. Windows CI is pinned to Visual Studio 2022, matching the supported CEF binary toolchain.
+
+## Hardware latency validation boundary
+
+No generic "X ms faster than Chrome" claim is made without measurements from real systems.
+
+Per-machine claims must come from the hardware-adaptive PresentMon protocol in BENCHMARKING.md. Packaged first-run calibration stores both the selected profile and raw evidence.
