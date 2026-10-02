@@ -36,6 +36,12 @@ if(WIN32)
   hax_set_warnings(hax_platform)
 endif()
 
+if(WIN32)
+  add_executable(hax_system_probe tools/probe_system.cpp)
+  target_link_libraries(hax_system_probe PRIVATE hax_platform)
+  hax_set_warnings(hax_system_probe)
+endif()
+
 if(HAX_BUILD_TESTS)
   enable_testing()
   add_executable(hax_core_tests tests/core_tests.cpp)
