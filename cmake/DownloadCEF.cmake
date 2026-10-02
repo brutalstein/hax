@@ -36,7 +36,7 @@ function(hax_download_cef download_dir)
 
     message(STATUS "Extracting CEF...")
     execute_process(
-      COMMAND ${CMAKE_COMMAND} -E tar xzf "${_archive}"
+      COMMAND ${CMAKE_COMMAND} -E tar xjf "${_archive}"
       WORKING_DIRECTORY "${download_dir}"
       RESULT_VARIABLE _extract_result
     )
