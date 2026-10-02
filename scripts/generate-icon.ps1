@@ -1,6 +1,6 @@
 param(
-  [Parameter(Mandatory=$true)]
-  [string]$SourceBase64,
+  [string]$SourceImage = "",
+  [string]$SourceBase64 = "",
 
   [Parameter(Mandatory=$true)]
   [string]$OutputIcon
@@ -9,7 +9,18 @@ param(
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Drawing
 
-if (-not (Test-Path $SourceBase64)) {
+if ([string]::IsNullOrWhiteSpace($SourceImage) -and
+    [string]::IsNullOrWhiteSpace($SourceBase64)) {
+  throw "Either -SourceImage or -SourceBase64 must be provided."
+}
+
+if (-not [string]::IsNullOrWhiteSpace($SourceImage) -and
+    -not (Test-Path $SourceImage)) {
+  throw "Icon source image not found: $SourceImage"
+}
+
+if (-not [string]::IsNullOrWhiteSpace($SourceBase64) -and
+    -not (Test-Path $SourceBase64)) {
   throw "Base64 icon source not found: $SourceBase64"
 }
 
@@ -74,12 +85,17 @@ function Write-ClassicIconImage {
   }
 }
 
-$base64 = (Get-Content -LiteralPath $SourceBase64 -Raw).Trim()
-try {
-  [byte[]]$pngBytes = [Convert]::FromBase64String($base64)
+if (-not [string]::IsNullOrWhiteSpace($SourceImage)) {
+  [byte[]]$pngBytes = [System.IO.File]::ReadAllBytes($SourceImage)
 }
-catch {
-  throw "Icon source is not valid base64."
+else {
+  $base64 = (Get-Content -LiteralPath $SourceBase64 -Raw).Trim()
+  try {
+    [byte[]]$pngBytes = [Convert]::FromBase64String($base64)
+  }
+  catch {
+    throw "Icon source is not valid base64."
+  }
 }
 
 $imageStream = New-Object System.IO.MemoryStream(,$pngBytes)
