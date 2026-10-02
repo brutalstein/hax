@@ -297,6 +297,51 @@ int main(int argc, char** argv) {
 
   const auto baseline_summary =
       hax::core::summarize(baseline_it->samples);
+
+  const auto repeat_it = std::find_if(
+      captures.begin(),
+      captures.end(),
+      [](const Capture& capture) {
+        return capture.label ==
+               "frame-default_gpu-default_cpu-default_prio-normal__repeat";
+      });
+
+  if (repeat_it != captures.end()) {
+    const auto repeat_summary =
+        hax::core::summarize(repeat_it->samples);
+
+    const auto relative_delta = [](const double a, const double b) {
+      const double denominator = std::max(std::abs(a), 1e-6);
+      return std::abs(b - a) / denominator;
+    };
+
+    const double latency_drift =
+        relative_delta(
+            baseline_summary.latency_p50_ms,
+            repeat_summary.latency_p50_ms);
+    const double frame_drift =
+        relative_delta(
+            baseline_summary.frame_p50_ms,
+            repeat_summary.frame_p50_ms);
+    const double calibration_drift =
+        std::max(latency_drift, frame_drift);
+
+    std::cout
+        << std::fixed
+        << std::setprecision(4)
+        << "BASELINE_DRIFT=" << calibration_drift
+        << " latency=" << latency_drift
+        << " frame=" << frame_drift
+        << '\n';
+
+    if (calibration_drift > 0.08) {
+      std::cerr
+          << "Calibration rejected: baseline changed by more than 8%. "
+          << "Cool the system, stabilize background load, and rerun.\n";
+      return 8;
+    }
+  }
+
   hax::core::Optimizer optimizer;
 
   const auto baseline_eval = optimizer.evaluate(
@@ -313,6 +358,10 @@ int main(int argc, char** argv) {
   evaluated.reserve(captures.size());
 
   for (const auto& capture : captures) {
+    if (capture.label.ends_with("__repeat")) {
+      continue;
+    }
+
     auto result = optimizer.evaluate(
         capture.profile,
         capture.samples,
