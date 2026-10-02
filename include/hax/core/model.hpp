@@ -30,11 +30,11 @@ enum class PriorityPolicy : std::uint8_t {
 };
 
 struct CandidateProfile {
-  FramePolicy frame{FramePolicy::uncapped};
+  FramePolicy frame{FramePolicy::browser_default};
   GpuPreference gpu{GpuPreference::system_default};
   CpuPolicy cpu{CpuPolicy::system_default};
-  PriorityPolicy priority{PriorityPolicy::above_normal};
-  bool disable_vsync{true};
+  PriorityPolicy priority{PriorityPolicy::normal};
+  bool disable_vsync{false};
   bool disable_power_throttling{true};
   bool honor_timer_resolution{true};
 
