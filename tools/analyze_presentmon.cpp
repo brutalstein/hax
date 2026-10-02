@@ -31,6 +31,8 @@ struct StreamSamples {
   std::vector<double> display_latency;
   std::vector<double> frame_time;
   std::vector<double> present_to_display;
+  std::vector<double> cpu_utilization;
+  std::vector<double> gpu_utilization;
   std::size_t hybrid_presents{0};
   std::size_t hybrid_observations{0};
 };
@@ -171,6 +173,8 @@ std::optional<Capture> load_capture(
   const auto process_id = column(columns, "ProcessID");
   const auto swap_chain = column(columns, "SwapChainAddress");
   const auto hybrid_present = column(columns, "HybridPresent");
+  const auto cpu_utilization = column(columns, "CPUUtilization");
+  const auto gpu_utilization = column(columns, "GPUUtilization");
 
   std::map<std::string, StreamSamples> streams;
 
@@ -196,6 +200,10 @@ std::optional<Capture> load_capture(
     append_if_valid(row, display_latency, stream.display_latency);
     append_if_valid(row, between_presents, stream.frame_time);
     append_if_valid(row, until_displayed, stream.present_to_display);
+    append_if_valid(
+        row, cpu_utilization, stream.cpu_utilization, false);
+    append_if_valid(
+        row, gpu_utilization, stream.gpu_utilization, false);
 
     if (hybrid_present && *hybrid_present < row.size()) {
       const auto value = parse_number(row[*hybrid_present]);
@@ -258,10 +266,24 @@ std::optional<Capture> load_capture(
 
   // Uncapped rendering normally produces presents that are superseded before
   // scan-out. They are not classified as stability failures here.
+  const auto average = [](const std::vector<double>& values) {
+    if (values.empty()) {
+      return 0.0;
+    }
+
+    double total = 0.0;
+    for (const double value : values) {
+      total += value;
+    }
+    return total / static_cast<double>(values.size());
+  };
+
   capture.samples.dropped_frame_ratio = 0.0;
   capture.samples.minimum_thermal_headroom_c = 100.0;
-  capture.samples.cpu_utilization = 0.0;
-  capture.samples.gpu_utilization = 0.0;
+  capture.samples.cpu_utilization =
+      average(selected.cpu_utilization);
+  capture.samples.gpu_utilization =
+      average(selected.gpu_utilization);
 
   if (capture.samples.pc_latency_ms.empty() ||
       capture.samples.frame_time_ms.empty()) {
@@ -404,6 +426,10 @@ int main(int argc, char** argv) {
           << " frame_drift_ratio=" << result.summary.frame_drift_ratio
           << " hybrid_present_ratio="
           << result.summary.hybrid_present_ratio
+          << " cpu_utilization="
+          << result.summary.cpu_utilization
+          << " gpu_utilization="
+          << result.summary.gpu_utilization
           << " present_p95_ms="
           << result.summary.present_to_display_p95_ms;
     } else {
