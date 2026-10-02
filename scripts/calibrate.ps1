@@ -14,19 +14,19 @@ $root = Split-Path -Parent $PSScriptRoot
 $sourceBinaryDir = Join-Path $root "build/$Configuration"
 $packagedBinaryDir = Join-Path $root "bin"
 
-if (Test-Path (Join-Path $sourceBinaryDir "hax.exe")) {
+if (Test-Path (Join-Path $sourceBinaryDir "Haxball App.exe")) {
   $binaryDir = $sourceBinaryDir
   $out = Join-Path $root "out/calibration"
 }
-elseif (Test-Path (Join-Path $packagedBinaryDir "hax.exe")) {
+elseif (Test-Path (Join-Path $packagedBinaryDir "Haxball App.exe")) {
   $binaryDir = $packagedBinaryDir
-  $out = Join-Path $env:LOCALAPPDATA "HaxPerformanceRuntime/calibration"
+  $out = Join-Path $env:LOCALAPPDATA "HaxballApp/calibration"
 }
 else {
-  throw "hax.exe was not found. Build the app or use the packaged distribution."
+  throw "Haxball App.exe was not found. Build the app or use the packaged distribution."
 }
 
-$exe = Join-Path $binaryDir "hax.exe"
+$exe = Join-Path $binaryDir "Haxball App.exe"
 $probe = Join-Path $binaryDir "hax_system_probe.exe"
 $analyzer = Join-Path $binaryDir "hax_capture_analyzer.exe"
 $inputPulse = Join-Path $binaryDir "hax_input_pulse.exe"
@@ -76,7 +76,7 @@ if (-not (Test-Path $presentMonExecutable)) {
 New-Item -ItemType Directory -Force -Path $out | Out-Null
 
 function Stop-CalibrationProcesses {
-  Get-Process -Name "hax","hax_input_pulse" -ErrorAction SilentlyContinue |
+  Get-Process -Name "Haxball App","hax_input_pulse" -ErrorAction SilentlyContinue |
     Stop-Process -Force -ErrorAction SilentlyContinue
 }
 
@@ -117,7 +117,7 @@ function Invoke-Capture {
     $pulseProcess = Start-Process -FilePath $inputPulse -ArgumentList $pulseArgs -PassThru
 
     $pmArgs = @(
-      "--process_name", "hax.exe",
+      "--process_name", "Haxball App.exe",
       "--timed", "$Seconds",
       "--output_file", $csv,
       "--terminate_after_timed",
@@ -235,7 +235,7 @@ foreach ($candidate in $remaining) {
 $candidates = $orderedCandidates
 
 Write-Host ""
-Write-Host "Hax hardware-adaptive calibration"
+Write-Host "Haxball App hardware-adaptive calibration"
 Write-Host "  CPU sets: $($probeData['CPU_SET_COUNT'])"
 Write-Host "  Heterogeneous CPU: $($probeData['HETEROGENEOUS_CPU'])"
 Write-Host "  Hardware GPUs: $($probeData['GPU_COUNT'])"
@@ -312,7 +312,7 @@ if ([string]::IsNullOrWhiteSpace($fingerprint)) {
   throw "Hardware fingerprint generation failed."
 }
 
-$profileDir = Join-Path $env:LOCALAPPDATA "HaxPerformanceRuntime"
+$profileDir = Join-Path $env:LOCALAPPDATA "HaxballApp"
 New-Item -ItemType Directory -Force -Path $profileDir | Out-Null
 $profilePath = Join-Path $profileDir "profile.ini"
 
