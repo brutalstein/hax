@@ -55,6 +55,11 @@ EvaluatedCandidate Optimizer::evaluate(
     result.rejection_reason = "thermal-headroom";
     return result;
   }
+  if (result.summary.frame_drift_ratio >
+      config_.maximum_frame_drift_ratio) {
+    result.rejection_reason = "frame-time-drift";
+    return result;
+  }
   if (result.summary.latency_p50_ms <= 0.0 ||
       result.summary.frame_p50_ms <= 0.0) {
     result.rejection_reason = "invalid-timing";
