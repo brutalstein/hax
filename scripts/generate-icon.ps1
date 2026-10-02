@@ -99,7 +99,7 @@ else {
 }
 
 $imageStream = New-Object System.IO.MemoryStream(,$pngBytes)
-$sourceImage = [System.Drawing.Image]::FromStream(
+$decodedImage = [System.Drawing.Image]::FromStream(
   $imageStream,
   $true,
   $true
@@ -131,7 +131,7 @@ try {
         [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 
       $graphics.DrawImage(
-        $sourceImage,
+        $decodedImage,
         0,
         0,
         $size,
@@ -155,7 +155,7 @@ try {
   }
 }
 finally {
-  $sourceImage.Dispose()
+  $decodedImage.Dispose()
   $imageStream.Dispose()
 }
 
