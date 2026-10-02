@@ -66,6 +66,18 @@ EvaluatedCandidate Optimizer::evaluate(
     return result;
   }
 
+  double present_component = 0.0;
+  if (baseline.present_to_display_p95_ms > 0.0) {
+    if (result.summary.present_to_display_p95_ms <= 0.0) {
+      result.rejection_reason = "missing-present-timing";
+      return result;
+    }
+
+    present_component = safe_ratio(
+        result.summary.present_to_display_p95_ms,
+        baseline.present_to_display_p95_ms);
+  }
+
   const double uncertainty =
       safe_ratio(1.96 * result.summary.latency_standard_error_ms,
                  baseline.latency_p50_ms);
@@ -81,10 +93,7 @@ EvaluatedCandidate Optimizer::evaluate(
           safe_ratio(
               result.summary.frame_mad_ms,
               std::max(baseline.frame_mad_ms, 0.01)) +
-      config_.weight_present_to_display *
-          safe_ratio(
-              result.summary.present_to_display_p95_ms,
-              std::max(baseline.present_to_display_p95_ms, 0.01)) +
+      config_.weight_present_to_display * present_component +
       config_.weight_cpu *
           utilization_penalty(result.summary.cpu_utilization) +
       config_.weight_gpu *
