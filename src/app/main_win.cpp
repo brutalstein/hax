@@ -56,6 +56,7 @@ int run(HINSTANCE instance) {
 }  // namespace
 
 int APIENTRY wWinMain(HINSTANCE instance, HINSTANCE, LPWSTR, int) {
-  CefEnableHighDPISupport();
+  (void)SetProcessDpiAwarenessContext(
+      DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
   return run(instance);
 }
