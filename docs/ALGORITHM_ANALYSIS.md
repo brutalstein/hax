@@ -81,7 +81,7 @@ The production-safe control space contains only settings actually applied by CEF
 frame:    browser default | uncapped
 GPU:      default | low-power | high-performance
 CPU:      default | performance CPU Sets
-priority: above-normal | high
+priority: normal | above-normal | high
 ```
 
 If there are F, G, C and P alternatives:
@@ -91,7 +91,7 @@ candidate count = F * G * C * P
 generation      = O(FGCP)
 ```
 
-Current upper bound is 2 * 3 * 2 * 2 = 24 candidates.
+Current upper bound is 2 * 3 * 2 * 3 = 36 candidates.
 
 Fixed 500/1000/2000/3000 FPS caps are not faked with JavaScript sleeping or gameplay-input modifications. Precise arbitrary capping requires a dedicated Chromium frame-pacing mechanism. Uncapped mode can still reach those frame rates when hardware allows.
 
