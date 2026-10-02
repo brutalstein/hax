@@ -91,6 +91,8 @@ EvaluatedCandidate Optimizer::evaluate(
           utilization_penalty(result.summary.gpu_utilization) +
       config_.weight_thermal *
           thermal_penalty(result.summary.thermal_headroom_c) +
+      config_.weight_hybrid_present *
+          result.summary.hybrid_present_ratio +
       config_.uncertainty_weight * uncertainty;
 
   result.feasible = std::isfinite(result.score);
