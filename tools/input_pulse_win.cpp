@@ -29,7 +29,7 @@ int parse_int_arg(
 }
 
 bool focus_benchmark_window() {
-  constexpr wchar_t kTitle[] = L"Hax Performance Runtime";
+  constexpr wchar_t kTitle[] = L"Haxball App";
 
   for (int attempt = 0; attempt < 60; ++attempt) {
     HWND window = FindWindowW(nullptr, kTitle);
