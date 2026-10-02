@@ -93,7 +93,7 @@ void App::OnContextInitialized() {
   CEF_REQUIRE_UI_THREAD();
 
   CefWindowInfo window_info;
-  window_info.SetAsPopup(nullptr, L"Hax Performance Runtime");
+  window_info.SetAsPopup(nullptr, L"Haxball App");
 
   CefBrowserSettings browser_settings;
   CefRefPtr<Client> client(new Client());
