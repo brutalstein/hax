@@ -1,6 +1,6 @@
 param(
   [Parameter(Mandatory=$true)]
-  [string]$SourceIcon,
+  [string]$SourceImage,
 
   [Parameter(Mandatory=$true)]
   [string]$OutputIcon
@@ -9,8 +9,8 @@ param(
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Drawing
 
-if (-not (Test-Path $SourceIcon)) {
-  throw "Source icon not found: $SourceIcon"
+if (-not (Test-Path $SourceImage)) {
+  throw "Source icon not found: $SourceImage"
 }
 
 function Write-ClassicIconImage {
@@ -77,80 +77,7 @@ function Write-ClassicIconImage {
   }
 }
 
-$iconBytes = [System.IO.File]::ReadAllBytes($SourceIcon)
-
-if ($iconBytes.Length -lt 22) {
-  throw "Source icon is too small to contain a valid ICO directory."
-}
-
-$count = [System.BitConverter]::ToUInt16($iconBytes, 4)
-if ($count -lt 1) {
-  throw "Source icon contains no image entries."
-}
-
-$bestOffset = 0
-$bestLength = 0
-$bestArea = -1
-
-for ($index = 0; $index -lt $count; ++$index) {
-  $entry = 6 + (16 * $index)
-  if (($entry + 16) -gt $iconBytes.Length) {
-    throw "Source icon directory is truncated."
-  }
-
-  $width = if ($iconBytes[$entry] -eq 0) {
-    256
-  } else {
-    [int]$iconBytes[$entry]
-  }
-
-  $height = if ($iconBytes[$entry + 1] -eq 0) {
-    256
-  } else {
-    [int]$iconBytes[$entry + 1]
-  }
-
-  $length = [System.BitConverter]::ToUInt32($iconBytes, $entry + 8)
-  $offset = [System.BitConverter]::ToUInt32($iconBytes, $entry + 12)
-  $area = $width * $height
-
-  if ($area -gt $bestArea) {
-    $bestArea = $area
-    $bestOffset = [int]$offset
-    $bestLength = [int]$length
-  }
-}
-
-if (
-  $bestLength -lt 8 -or
-  $bestOffset -lt 0 -or
-  ($bestOffset + $bestLength) -gt $iconBytes.Length
-) {
-  throw "Largest source icon entry has invalid bounds."
-}
-
-[byte[]]$embeddedImage = New-Object byte[] $bestLength
-[System.Array]::Copy(
-  $iconBytes,
-  $bestOffset,
-  $embeddedImage,
-  0,
-  $bestLength
-)
-
-$pngSignature = @(137, 80, 78, 71, 13, 10, 26, 10)
-for ($i = 0; $i -lt $pngSignature.Count; ++$i) {
-  if ($embeddedImage[$i] -ne $pngSignature[$i]) {
-    throw "Largest source icon entry is not PNG encoded."
-  }
-}
-
-$imageStream = New-Object System.IO.MemoryStream(,$embeddedImage)
-$sourceImage = [System.Drawing.Image]::FromStream(
-  $imageStream,
-  $true,
-  $true
-)
+$sourceImageObject = [System.Drawing.Image]::FromFile($SourceImage)
 $images = New-Object System.Collections.Generic.List[object]
 
 try {
@@ -177,7 +104,7 @@ try {
         [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
 
       $graphics.DrawImage(
-        $sourceImage,
+        $sourceImageObject,
         0,
         0,
         $size,
@@ -201,10 +128,9 @@ try {
   }
 }
 finally {
-  if ($sourceImage) {
-    $sourceImage.Dispose()
+  if ($sourceImageObject) {
+    $sourceImageObject.Dispose()
   }
-  $imageStream.Dispose()
 }
 
 $outputDirectory = Split-Path -Parent $OutputIcon
@@ -257,4 +183,4 @@ if (-not (Test-Path $OutputIcon)) {
   throw "Failed to generate Windows icon: $OutputIcon"
 }
 
-Write-Host "Generated RC-compatible Haxball App icon: $OutputIcon"
+Write-Host "Generated RC-compatible Haxball App icon from PNG: $OutputIcon"
