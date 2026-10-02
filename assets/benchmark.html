@@ -20,6 +20,7 @@
     let frames=0;
     let windowStart=last;
     let phase=0;
+    let inputPulse=0;
 
     function resize(){
       const scale=devicePixelRatio||1;
@@ -28,6 +29,12 @@
     }
 
     addEventListener('resize',resize);
+    addEventListener('keydown',event=>{
+      if(event.code==='F24'||event.key==='F24'){
+        inputPulse++;
+        event.preventDefault();
+      }
+    });
     resize();
 
     function frame(now){
@@ -36,11 +43,20 @@
       phase+=dt*0.001;
       frames++;
 
-      ctx.fillStyle='#05070a';
+      const pulseActive=(inputPulse&1)!==0;
+      ctx.fillStyle=pulseActive?'#f4f7fb':'#05070a';
       ctx.fillRect(0,0,canvas.width,canvas.height);
 
       const w=canvas.width;
       const h=canvas.height;
+
+      ctx.fillStyle=pulseActive?'#05070a':'#f4f7fb';
+      ctx.fillRect(
+        Math.floor(w*0.25),
+        Math.floor(h*0.25),
+        Math.floor(w*0.5),
+        Math.floor(h*0.5)
+      );
       for(let i=0;i<64;i++){
         const t=phase*(1+(i%7)*0.03)+i*0.137;
         const x=(0.5+0.45*Math.sin(t*2.7))*w;
