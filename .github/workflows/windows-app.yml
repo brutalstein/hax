@@ -98,15 +98,14 @@ jobs:
         shell: pwsh
         run: |
           $stage = "dist/Haxball App"
-          $bin = Join-Path $stage "bin"
           $scripts = Join-Path $stage "scripts"
           $docs = Join-Path $stage "docs"
-          New-Item -ItemType Directory -Force -Path $bin,$scripts,$docs | Out-Null
+          New-Item -ItemType Directory -Force -Path $stage,$scripts,$docs | Out-Null
 
-          Copy-Item "build/Release/*" $bin -Recurse -Force
-          Remove-Item "$bin/*.pdb" -Force -ErrorAction SilentlyContinue
-          Remove-Item "$bin/hax_core_tests.exe" -Force -ErrorAction SilentlyContinue
-          Remove-Item "$bin/hax_optimizer_bench.exe" -Force -ErrorAction SilentlyContinue
+          Copy-Item "build/Release/*" $stage -Recurse -Force
+          Remove-Item "$stage/*.pdb" -Force -ErrorAction SilentlyContinue
+          Remove-Item "$stage/hax_core_tests.exe" -Force -ErrorAction SilentlyContinue
+          Remove-Item "$stage/hax_optimizer_bench.exe" -Force -ErrorAction SilentlyContinue
 
           Copy-Item "scripts/calibrate.ps1" $scripts
           Copy-Item "scripts/ensure-presentmon.ps1" $scripts
@@ -153,4 +152,4 @@ jobs:
             --repo $env:GITHUB_REPOSITORY `
             --target $env:GITHUB_SHA `
             --title "Haxball App - Latest" `
-            --notes "Latest verified Windows x64 build of Haxball App. Extract the ZIP and run Install Haxball App.cmd."
+            --notes "Latest verified Windows x64 build of Haxball App. Extract the ZIP and double-click Haxball App.exe. The installer is optional."
