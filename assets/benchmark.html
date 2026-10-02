@@ -44,19 +44,11 @@
       frames++;
 
       const pulseActive=(inputPulse&1)!==0;
-      ctx.fillStyle=pulseActive?'#f4f7fb':'#05070a';
+      ctx.fillStyle='#05070a';
       ctx.fillRect(0,0,canvas.width,canvas.height);
 
       const w=canvas.width;
       const h=canvas.height;
-
-      ctx.fillStyle=pulseActive?'#05070a':'#f4f7fb';
-      ctx.fillRect(
-        Math.floor(w*0.25),
-        Math.floor(h*0.25),
-        Math.floor(w*0.5),
-        Math.floor(h*0.5)
-      );
       for(let i=0;i<64;i++){
         const t=phase*(1+(i%7)*0.03)+i*0.137;
         const x=(0.5+0.45*Math.sin(t*2.7))*w;
@@ -66,6 +58,10 @@
         ctx.fillStyle='hsl('+((i*37+now*0.02)%360)+' 80% 60%)';
         ctx.fill();
       }
+
+      const indicator=Math.max(12,Math.floor(18*(devicePixelRatio||1)));
+      ctx.fillStyle=pulseActive?'#d7e3f4':'#6f7c8f';
+      ctx.fillRect(w-indicator-16,16,indicator,indicator);
 
       if(now-windowStart>=1000){
         const fps=frames*1000/(now-windowStart);
