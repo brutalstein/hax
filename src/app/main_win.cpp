@@ -4,10 +4,12 @@
 #include "include/cef_app.h"
 
 #include <windows.h>
+#include <shellapi.h>
 
 #include <filesystem>
 #include <iterator>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace {
