@@ -10,7 +10,7 @@ $url = "https://github.com/GameTechDev/PresentMon/releases/download/v$version/$f
 $expectedSha256 = "b2a706bc6ad475749e3b7e3409263aa1e6906d45bdcf993f6dbc0f660188f1af"
 
 if ([string]::IsNullOrWhiteSpace($DestinationDirectory)) {
-  $DestinationDirectory = Join-Path $env:LOCALAPPDATA "HaxPerformanceRuntime/tools"
+  $DestinationDirectory = Join-Path $env:LOCALAPPDATA "HaxballApp/tools"
 }
 
 New-Item -ItemType Directory -Force -Path $DestinationDirectory | Out-Null
