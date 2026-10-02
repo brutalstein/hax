@@ -46,6 +46,7 @@ struct SampleSeries {
   std::vector<double> frame_time_ms;
   std::vector<double> present_to_display_ms;
   double dropped_frame_ratio{0.0};
+  double hybrid_present_ratio{0.0};
   double cpu_utilization{0.0};
   double gpu_utilization{0.0};
   double minimum_thermal_headroom_c{100.0};
@@ -64,6 +65,7 @@ struct Summary {
   double mean_latency_ms{0.0};
   double latency_standard_error_ms{0.0};
   double dropped_frame_ratio{0.0};
+  double hybrid_present_ratio{0.0};
   double cpu_utilization{0.0};
   double gpu_utilization{0.0};
   double thermal_headroom_c{100.0};
@@ -93,6 +95,7 @@ struct OptimizerConfig {
   double weight_cpu{0.03};
   double weight_gpu{0.02};
   double weight_thermal{0.01};
+  double weight_hybrid_present{0.02};
   double uncertainty_weight{0.20};
 };
 
