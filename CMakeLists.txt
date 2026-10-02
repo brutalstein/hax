@@ -48,6 +48,10 @@ if(HAX_BUILD_BENCHMARKS)
   add_executable(hax_optimizer_bench tools/benchmark_optimizer.cpp)
   target_link_libraries(hax_optimizer_bench PRIVATE hax_core)
   hax_set_warnings(hax_optimizer_bench)
+
+  add_executable(hax_capture_analyzer tools/analyze_presentmon.cpp)
+  target_link_libraries(hax_capture_analyzer PRIVATE hax_core)
+  hax_set_warnings(hax_capture_analyzer)
 endif()
 
 if(HAX_BUILD_APP)
