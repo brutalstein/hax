@@ -68,6 +68,56 @@ jobs:
             }
           }
 
+      - name: Verify deterministic hardware fingerprint
+        shell: pwsh
+        run: |
+          $probe = "build/Release/hax_system_probe.exe"
+          $a = & "scripts/hardware-fingerprint.ps1" -ProbeExecutable $probe
+          $b = & "scripts/hardware-fingerprint.ps1" -ProbeExecutable $probe
+
+          if ($a -ne $b) {
+            throw "Hardware fingerprint is not deterministic."
+          }
+
+          if ($a -notmatch '^[0-9a-f]{64}        shell: pwsh
+        run: |
+          $stage = "dist/HaxPerformanceRuntime"
+          $bin = Join-Path $stage "bin"
+          $scripts = Join-Path $stage "scripts"
+          $docs = Join-Path $stage "docs"
+
+          New-Item -ItemType Directory -Force -Path $bin,$scripts,$docs | Out-Null
+
+          Copy-Item "build/Release/*" $bin -Recurse -Force
+          Remove-Item "$bin/*.pdb" -Force -ErrorAction SilentlyContinue
+          Remove-Item "$bin/hax_core_tests.exe" -Force -ErrorAction SilentlyContinue
+          Remove-Item "$bin/hax_optimizer_bench.exe" -Force -ErrorAction SilentlyContinue
+
+          Copy-Item "scripts/calibrate.ps1" $scripts
+          Copy-Item "scripts/ensure-presentmon.ps1" $scripts
+          Copy-Item "scripts/hardware-fingerprint.ps1" $scripts
+          Copy-Item "scripts/run.ps1" $scripts
+          Copy-Item "docs/*" $docs
+          Copy-Item "README.md","LICENSE","THIRD_PARTY_NOTICES.md" $stage
+          if (Test-Path "SECURITY.md") {
+            Copy-Item "SECURITY.md" $stage
+          }
+
+          Compress-Archive -Path "$stage/*" -DestinationPath "dist/HaxPerformanceRuntime-win64.zip" -Force
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: HaxPerformanceRuntime-win64
+          path: dist/HaxPerformanceRuntime-win64.zip
+          if-no-files-found: error
+          retention-days: 14
+) {
+            throw "Unexpected fingerprint format: $a"
+          }
+
+          Write-Host "Fingerprint smoke test passed: $a"
+
       - name: Package Windows x64 runtime
         shell: pwsh
         run: |
