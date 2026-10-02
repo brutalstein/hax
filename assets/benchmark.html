@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Hax Render Calibration</title>
+  <style>
+    html,body,canvas{width:100%;height:100%;margin:0;overflow:hidden;background:#05070a}
+    #stats{position:fixed;top:12px;left:12px;color:#d7e3f4;font:14px ui-monospace,monospace}
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="stats">calibrating...</div>
+  <script>
+    const canvas=document.getElementById('c');
+    const ctx=canvas.getContext('2d',{alpha:false,desynchronized:true});
+    const stats=document.getElementById('stats');
+    let last=performance.now();
+    let frames=0;
+    let windowStart=last;
+    let phase=0;
+
+    function resize(){
+      const scale=devicePixelRatio||1;
+      canvas.width=Math.max(1,Math.floor(innerWidth*scale));
+      canvas.height=Math.max(1,Math.floor(innerHeight*scale));
+    }
+
+    addEventListener('resize',resize);
+    resize();
+
+    function frame(now){
+      const dt=Math.max(0.0001,now-last);
+      last=now;
+      phase+=dt*0.001;
+      frames++;
+
+      ctx.fillStyle='#05070a';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+
+      const w=canvas.width;
+      const h=canvas.height;
+      for(let i=0;i<64;i++){
+        const t=phase*(1+(i%7)*0.03)+i*0.137;
+        const x=(0.5+0.45*Math.sin(t*2.7))*w;
+        const y=(0.5+0.45*Math.cos(t*3.1))*h;
+        ctx.beginPath();
+        ctx.arc(x,y,6+(i%8),0,Math.PI*2);
+        ctx.fillStyle='hsl('+((i*37+now*0.02)%360)+' 80% 60%)';
+        ctx.fill();
+      }
+
+      if(now-windowStart>=1000){
+        const fps=frames*1000/(now-windowStart);
+        stats.textContent='CEF render calibration - '+fps.toFixed(0)+' FPS - desynchronized canvas';
+        frames=0;
+        windowStart=now;
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
