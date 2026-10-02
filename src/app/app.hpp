@@ -6,13 +6,23 @@
 
 namespace hax::app {
 
-class App final : public CefApp, public CefBrowserProcessHandler {
+class App final : public CefApp,
+                  public CefBrowserProcessHandler,
+                  public CefRenderProcessHandler {
  public:
   explicit App(LaunchOptions options);
 
   CefRefPtr<CefBrowserProcessHandler> GetBrowserProcessHandler() override {
     return this;
   }
+
+  CefRefPtr<CefRenderProcessHandler> GetRenderProcessHandler() override {
+    return this;
+  }
+
+  void OnContextCreated(CefRefPtr<CefBrowser> browser,
+                        CefRefPtr<CefFrame> frame,
+                        CefRefPtr<CefV8Context> context) override;
 
   void OnBeforeCommandLineProcessing(
       const CefString& process_type,

@@ -5,11 +5,53 @@
 #include "include/wrapper/cef_helpers.h"
 
 #include <filesystem>
+#include <string>
 #include <utility>
 
 namespace hax::app {
+namespace {
+
+// Low-latency canvas: HaxBall's canvases are created with
+// desynchronized: true, so Chromium may present them straight to the screen
+// (front buffer / overlay) instead of waiting for the compositor, saving up
+// to a frame of input-to-photon latency. Possible cost: tearing. The game code
+// itself is untouched; only the context creation option is added.
+constexpr char kLowLatencyCanvasScript[] = R"JS(
+(() => {
+  const getContext = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function (type, attributes) {
+    if (type === '2d' || type === 'webgl' || type === 'webgl2') {
+      attributes = Object.assign({}, attributes, { desynchronized: true });
+    }
+    return getContext.call(this, type, attributes);
+  };
+})();
+)JS";
+
+bool is_haxball_url(const std::string& url) {
+  return url.starts_with("https://www.haxball.com/") ||
+         url.starts_with("https://haxball.com/");
+}
+
+}  // namespace
 
 App::App(LaunchOptions options) : options_(std::move(options)) {}
+
+void App::OnContextCreated(CefRefPtr<CefBrowser> browser,
+                           CefRefPtr<CefFrame> frame,
+                           CefRefPtr<CefV8Context> context) {
+  (void)browser;
+
+  // Runs in the renderer before any page script of the frame, so the game
+  // frame's canvas is already created with the low-latency option.
+  if (!is_haxball_url(frame->GetURL().ToString())) {
+    return;
+  }
+
+  CefRefPtr<CefV8Value> result;
+  CefRefPtr<CefV8Exception> exception;
+  context->Eval(kLowLatencyCanvasScript, frame->GetURL(), 0, result, exception);
+}
 
 void App::OnBeforeCommandLineProcessing(
     const CefString& process_type,

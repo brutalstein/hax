@@ -25,6 +25,7 @@ No installer is required. The app opens as a single plain window (no browser tab
 - **Every later launch:** the game opens instantly with the stored profile; nothing runs in the background.
 - **Joining by link:** paste a room link (or room code) into the bar at the top of the page; it joins immediately. `Ctrl+L` focuses the bar, `Esc` returns to the game. Room links clicked inside the game stay in the app; other links open in your default browser.
 - **Fullscreen:** `F11` toggles borderless fullscreen (works while the game has focus).
+- **Low-latency canvas:** HaxBall's canvases are created with `desynchronized: true`, letting Chromium present the game directly instead of waiting for the compositor (possible tearing). The game code itself is not modified.
 - **Launching again** while the game is open just brings the existing window to the front.
 
 The stored profile comes from full PresentMon calibration: browser vsync pacing gave the lowest frame-to-display latency (about 9.5 ms versus 21 ms uncapped at 300 Hz), while GPU selection and CPU policy were within measurement noise.
