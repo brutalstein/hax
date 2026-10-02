@@ -119,6 +119,16 @@ jobs:
             Copy-Item "SECURITY.md" $stage
           }
 
+          if (-not (Test-Path "$stage/Haxball App.exe")) {
+            throw "Portable package is missing root-level Haxball App.exe"
+          }
+          if (-not (Test-Path "$stage/libcef.dll")) {
+            throw "Portable package is missing root-level CEF runtime"
+          }
+          if (-not (Test-Path "$stage/scripts/run.ps1")) {
+            throw "Portable package is missing bootstrap script"
+          }
+
           Compress-Archive -Path "$stage/*" -DestinationPath "dist/Haxball-App-Windows-x64.zip" -Force
 
       - name: Upload CI artifact
