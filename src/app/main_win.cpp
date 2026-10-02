@@ -56,7 +56,7 @@ int run(HINSTANCE instance) {
   if (chars > 0 && chars < std::size(local_app_data)) {
     const auto cache =
         std::filesystem::path(local_app_data) /
-        L"HaxPerformanceRuntime" / L"cef";
+        L"HaxballApp" / L"cef";
     std::error_code error;
     std::filesystem::create_directories(cache, error);
     if (!error) {
