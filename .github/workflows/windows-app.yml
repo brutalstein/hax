@@ -10,8 +10,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -136,6 +136,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          git fetch origin main --quiet
+          $mainHead = (git rev-parse origin/main).Trim()
+          if ($mainHead -ne $env:GITHUB_SHA) {
+            Write-Host "Skipping release: this run is not the current main HEAD."
+            exit 0
+          }
+
           gh release view latest --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -eq 0) {
             gh release delete latest --repo $env:GITHUB_REPOSITORY --cleanup-tag --yes
