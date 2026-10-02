@@ -45,6 +45,7 @@ Win32 / C++20
 └─ calibration
    ├─ desynchronized-canvas workload
    ├─ PresentMon capture
+   ├─ calibration-only F24 input pulses
    ├─ process + swapchain stream isolation
    └─ persisted per-machine winner
 ~~~
@@ -102,7 +103,9 @@ Calibration exhaustively tests the hardware-relevant configuration space after p
 
 Maximum size is **36 candidates + one repeated baseline**. A single-GPU homogeneous desktop tests only 6 + baseline repeat.
 
-The optimizer evaluates median and p99 latency, p99 frame time, MAD frame-time jitter, present-to-display timing, uncertainty, and sustained first-vs-last frame-time drift. The complete calibration is rejected if its repeated baseline changes by more than 8%.
+During calibration, a dedicated helper sends harmless F24 keyboard pulses to the local synthetic benchmark and the canvas visibly reacts to them. This gives PresentMon a repeatable keyboard-input-to-photon signal without changing HaxBall gameplay input.
+
+The optimizer evaluates median and p99 latency, p99 frame time, MAD frame-time jitter, present-to-display timing, cross-adapter presentation, uncertainty, and sustained first-vs-last frame-time drift. The complete calibration is rejected if its repeated baseline changes by more than 8%.
 
 ## Reproducible dependencies
 
