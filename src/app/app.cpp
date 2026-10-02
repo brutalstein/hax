@@ -41,6 +41,53 @@ void App::OnBeforeCommandLineProcessing(
   command_line->AppendSwitch("disable-background-timer-throttling");
 }
 
+void App::OnBeforeChildProcessLaunch(
+    CefRefPtr<CefCommandLine> command_line) {
+  switch (options_.profile.frame) {
+    case hax::core::FramePolicy::browser_default:
+      command_line->AppendSwitchWithValue("hax-fps", "default");
+      break;
+    case hax::core::FramePolicy::uncapped:
+      command_line->AppendSwitchWithValue("hax-fps", "uncapped");
+      break;
+  }
+
+  switch (options_.profile.gpu) {
+    case hax::core::GpuPreference::system_default:
+      command_line->AppendSwitchWithValue("hax-gpu", "default");
+      break;
+    case hax::core::GpuPreference::low_power:
+      command_line->AppendSwitchWithValue("hax-gpu", "low");
+      break;
+    case hax::core::GpuPreference::high_performance:
+      command_line->AppendSwitchWithValue("hax-gpu", "high");
+      break;
+  }
+
+  switch (options_.profile.cpu) {
+    case hax::core::CpuPolicy::system_default:
+      command_line->AppendSwitchWithValue("hax-cpu", "default");
+      break;
+    case hax::core::CpuPolicy::prefer_performance_cores:
+      command_line->AppendSwitchWithValue("hax-cpu", "performance");
+      break;
+  }
+
+  switch (options_.profile.priority) {
+    case hax::core::PriorityPolicy::normal:
+      command_line->AppendSwitchWithValue("hax-priority", "normal");
+      break;
+    case hax::core::PriorityPolicy::above_normal:
+      command_line->AppendSwitchWithValue("hax-priority", "above");
+      break;
+    case hax::core::PriorityPolicy::high:
+      command_line->AppendSwitchWithValue("hax-priority", "high");
+      break;
+  }
+
+  command_line->AppendSwitch("hax-no-profile");
+}
+
 void App::OnContextInitialized() {
   CEF_REQUIRE_UI_THREAD();
 
