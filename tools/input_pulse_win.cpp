@@ -34,9 +34,27 @@ bool focus_benchmark_window() {
   for (int attempt = 0; attempt < 60; ++attempt) {
     HWND window = FindWindowW(nullptr, kTitle);
     if (window != nullptr) {
-      ShowWindow(window, SW_RESTORE);
+      // Restore only when minimized; the benchmark window is maximized like
+      // the game window and must keep that size.
+      if (IsIconic(window)) {
+        ShowWindow(window, SW_RESTORE);
+      }
       BringWindowToTop(window);
       if (SetForegroundWindow(window) != FALSE) {
+        return true;
+      }
+
+      // Windows refuses foreground changes from background processes; a held
+      // ALT key lifts that lock for this call.
+      INPUT alt[2]{};
+      alt[0].type = INPUT_KEYBOARD;
+      alt[0].ki.wVk = VK_MENU;
+      alt[1] = alt[0];
+      alt[1].ki.dwFlags = KEYEVENTF_KEYUP;
+      SendInput(1, &alt[0], sizeof(INPUT));
+      const BOOL focused = SetForegroundWindow(window);
+      SendInput(1, &alt[1], sizeof(INPUT));
+      if (focused != FALSE) {
         return true;
       }
     }

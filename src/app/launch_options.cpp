@@ -65,12 +65,32 @@ std::filesystem::path persisted_profile_path() {
          L"profile.ini";
 }
 
-void load_persisted_profile(LaunchOptions& options) {
-  const auto path = persisted_profile_path();
-  if (path.empty()) {
-    return;
+// Full PresentMon calibration (19 configs) showed only the frame policy
+// matters: browser vsync pacing wins (~9.5 ms vs ~21 ms frame-to-display at
+// 300 Hz); GPU and priority choices were within noise, above-normal priority
+// marginally best. So the first launch stores that profile instantly instead
+// of measuring; "Recalibrate Haxball App.cmd" still measures in full.
+bool write_default_profile_if_missing(const std::filesystem::path& path) {
+  std::error_code error;
+  if (std::filesystem::exists(path, error)) {
+    return false;
   }
 
+  std::filesystem::create_directories(path.parent_path(), error);
+  std::ofstream output(path);
+  output << "# Haxball App low-latency profile (first-launch default).\n"
+            "# Run \"Recalibrate Haxball App.cmd\" to measure this PC.\n"
+            "schema=2\n"
+            "frame=default\n"
+            "gpu=default\n"
+            "cpu=default\n"
+            "priority=above\n";
+  return static_cast<bool>(output);
+}
+
+void load_persisted_profile(
+    LaunchOptions& options,
+    const std::filesystem::path& path) {
   std::wifstream input(path);
   if (!input) {
     return;
@@ -139,8 +159,14 @@ LaunchOptions parse_launch_options() {
     }
   }
 
+  // CEF subprocesses and benchmark runs carry --hax-no-profile, so only the
+  // player's browser process creates or reads the profile.
   if (!ignore_persisted_profile) {
-    load_persisted_profile(options);
+    const auto path = persisted_profile_path();
+    if (!path.empty()) {
+      options.first_run = write_default_profile_if_missing(path);
+      load_persisted_profile(options, path);
+    }
   }
 
   for (int i = 1; i < argc; ++i) {
@@ -148,11 +174,6 @@ LaunchOptions parse_launch_options() {
 
     if (arg == L"--hax-benchmark") {
       options.benchmark_mode = true;
-      continue;
-    }
-
-    if (arg == L"--hax-bootstrap-complete") {
-      options.bootstrap_complete = true;
       continue;
     }
 

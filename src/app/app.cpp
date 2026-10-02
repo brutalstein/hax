@@ -87,7 +87,6 @@ void App::OnBeforeChildProcessLaunch(
   }
 
   command_line->AppendSwitch("hax-no-profile");
-  command_line->AppendSwitch("hax-bootstrap-complete");
 }
 
 void App::OnContextInitialized() {
@@ -95,9 +94,13 @@ void App::OnContextInitialized() {
 
   CefWindowInfo window_info;
   window_info.SetAsPopup(nullptr, L"Haxball App");
+  // Alloy style: a plain app window without Chrome tabs, toolbar or session
+  // restore. The title also stays "Haxball App", which the calibration input
+  // helper relies on to find the benchmark window.
+  window_info.runtime_style = CEF_RUNTIME_STYLE_ALLOY;
 
   CefBrowserSettings browser_settings;
-  CefRefPtr<Client> client(new Client());
+  client_ = new Client(!options_.benchmark_mode, options_.first_run);
 
   std::string target_url = options_.url;
   if (options_.benchmark_mode) {
@@ -107,11 +110,26 @@ void App::OnContextInitialized() {
 
   CefBrowserHost::CreateBrowser(
       window_info,
-      client,
+      client_,
       target_url,
       browser_settings,
       nullptr,
       nullptr);
+}
+
+bool App::OnAlreadyRunningAppRelaunch(
+    CefRefPtr<CefCommandLine> command_line,
+    const CefString& current_directory) {
+  CEF_REQUIRE_UI_THREAD();
+  (void)command_line;
+  (void)current_directory;
+
+  // A second launch focuses the running game instead of opening another
+  // (Chrome-style) window.
+  if (client_) {
+    client_->BringToFront();
+  }
+  return true;
 }
 
 }  // namespace hax::app

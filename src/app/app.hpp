@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/client.hpp"
 #include "app/launch_options.hpp"
 #include "include/cef_app.h"
 
@@ -22,8 +23,13 @@ class App final : public CefApp, public CefBrowserProcessHandler {
 
   void OnContextInitialized() override;
 
+  bool OnAlreadyRunningAppRelaunch(
+      CefRefPtr<CefCommandLine> command_line,
+      const CefString& current_directory) override;
+
  private:
   LaunchOptions options_;
+  CefRefPtr<Client> client_;
 
   IMPLEMENT_REFCOUNTING(App);
   DISALLOW_COPY_AND_ASSIGN(App);
