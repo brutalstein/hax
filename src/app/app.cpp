@@ -31,7 +31,8 @@ void App::OnBeforeCommandLineProcessing(
       command_line->AppendSwitch("force-high-performance-gpu");
       break;
     case hax::core::GpuPreference::low_power:
-      command_line->AppendSwitch("force-low-power-gpu");
+      command_line->AppendSwitchWithValue(
+          "gpu-switching", "force_integrated");
       break;
     case hax::core::GpuPreference::system_default:
       break;
