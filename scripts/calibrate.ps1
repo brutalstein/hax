@@ -103,6 +103,10 @@ function Invoke-Capture {
   try {
     Start-Sleep -Milliseconds 1750
 
+    if ($haxProcess.HasExited) {
+      throw "Hax benchmark exited before capture for $Name with exit code $($haxProcess.ExitCode)."
+    }
+
     $pulseSeconds = [Math]::Max(1, $Seconds - 1)
     $pulseArgs = @(
       "--seconds=$pulseSeconds",
