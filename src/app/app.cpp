@@ -1,6 +1,8 @@
 #include "app/app.hpp"
 #include "app/client.hpp"
+
 #include "include/cef_browser.h"
+#include "include/wrapper/cef_helpers.h"
 
 #include <filesystem>
 #include <utility>
