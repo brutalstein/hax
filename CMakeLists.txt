@@ -91,9 +91,26 @@ if(HAX_BUILD_APP)
   add_subdirectory("${CEF_LIBCEF_DLL_WRAPPER_PATH}" libcef_dll_wrapper)
   ADD_LOGICAL_TARGET("libcef_lib" "${CEF_LIB_RELEASE}" "${CEF_LIB_DEBUG}")
 
-  file(TO_CMAKE_PATH
-    "${CMAKE_CURRENT_SOURCE_DIR}/assets/windows/haxball_app.ico"
-    HAX_APP_ICON_PATH)
+  set(HAX_SOURCE_ICON
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/windows/haxball_app.ico")
+  set(HAX_GENERATED_ICON
+    "${CMAKE_CURRENT_BINARY_DIR}/haxball_app_rc.ico")
+
+  execute_process(
+    COMMAND powershell.exe
+      -NoProfile
+      -ExecutionPolicy Bypass
+      -File "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate-icon.ps1"
+      -SourceIcon "${HAX_SOURCE_ICON}"
+      -OutputIcon "${HAX_GENERATED_ICON}"
+    RESULT_VARIABLE HAX_ICON_RESULT
+  )
+
+  if(NOT HAX_ICON_RESULT EQUAL 0 OR NOT EXISTS "${HAX_GENERATED_ICON}")
+    message(FATAL_ERROR "Failed to generate RC-compatible Haxball App icon")
+  endif()
+
+  file(TO_CMAKE_PATH "${HAX_GENERATED_ICON}" HAX_APP_ICON_PATH)
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/assets/windows/haxball_app.rc.in"
     "${CMAKE_CURRENT_BINARY_DIR}/haxball_app.rc"
