@@ -13,19 +13,27 @@
 
 Haxball App is an unofficial Windows-first native performance client for the official HaxBall web game. It loads the official HaxBall site inside a pinned Chromium Embedded Framework runtime and calibrates the local machine for minimum stable latency rather than simply chasing the largest FPS counter.
 
-## Install
+## Run
 
 1. Download the ZIP above.
 2. Extract it.
-3. Double-click **Install Haxball App.cmd**.
+3. Double-click **Haxball App.exe**.
 
-The installer copies the application to:
+No installer is required. On first launch, the app starts its hardware calibration in the background and then opens automatically. If calibration fails for any reason, Haxball App still opens with safe browser-default settings and writes the diagnostic to:
+
+```text
+%LOCALAPPDATA%\HaxballApp\last-calibration-error.txt
+```
+
+**Install Haxball App.cmd** is optional. Use it only if you want the app copied to a permanent location with Desktop and Start Menu shortcuts.
+
+The optional installer copies the application to:
 
 ```text
 %LOCALAPPDATA%\Programs\Haxball App
 ```
 
-It creates **Haxball App** shortcuts on the Desktop and Start Menu. The supplied H icon is embedded directly in **Haxball App.exe** and is also assigned to the native CEF window, so Explorer, the desktop shortcut and the Windows taskbar use the same application icon.
+It creates **Haxball App** shortcuts on the Desktop and Start Menu that point directly to **Haxball App.exe**. The supplied H icon is embedded directly in **Haxball App.exe** and is also assigned to the native CEF window, so Explorer, the desktop shortcut and the Windows taskbar use the same application icon.
 
 On first launch, Haxball App performs hardware-adaptive calibration and stores the measured winning profile before opening the official HaxBall page.
 
