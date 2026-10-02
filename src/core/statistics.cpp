@@ -138,6 +138,8 @@ Summary summarize(const SampleSeries& samples) {
   out.latency_standard_error_ms =
       standard_error(samples.pc_latency_ms, out.mean_latency_ms);
   out.dropped_frame_ratio = samples.dropped_frame_ratio;
+  out.hybrid_present_ratio =
+      std::clamp(samples.hybrid_present_ratio, 0.0, 1.0);
   out.cpu_utilization = samples.cpu_utilization;
   out.gpu_utilization = samples.gpu_utilization;
   out.thermal_headroom_c = samples.minimum_thermal_headroom_c;
