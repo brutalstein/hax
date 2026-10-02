@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(HaxPerformanceRuntime
+project(HaxballApp
   VERSION 0.1.0
-  DESCRIPTION "Hardware-adaptive low-latency runtime for the official HaxBall web client"
+  DESCRIPTION "Hardware-adaptive low-latency Haxball App for Windows"
   LANGUAGES CXX)
 
 option(HAX_BUILD_APP "Build the Windows CEF application" OFF)
@@ -91,11 +91,20 @@ if(HAX_BUILD_APP)
   add_subdirectory("${CEF_LIBCEF_DLL_WRAPPER_PATH}" libcef_dll_wrapper)
   ADD_LOGICAL_TARGET("libcef_lib" "${CEF_LIB_RELEASE}" "${CEF_LIB_DEBUG}")
 
+  file(TO_CMAKE_PATH
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/windows/haxball_app.ico"
+    HAX_APP_ICON_PATH)
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/assets/windows/haxball_app.rc.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/haxball_app.rc"
+    @ONLY)
+
   add_executable(hax WIN32
     src/app/app.cpp
     src/app/client.cpp
     src/app/launch_options.cpp
     src/app/main_win.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/haxball_app.rc"
   )
   target_include_directories(hax PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
@@ -116,6 +125,7 @@ if(HAX_BUILD_APP)
     _UNICODE
   )
   SET_EXECUTABLE_TARGET_PROPERTIES(hax)
+  set_target_properties(hax PROPERTIES OUTPUT_NAME "Haxball App")
   hax_set_warnings(hax)
 
   set(HAX_OUT_DIR "$<TARGET_FILE_DIR:hax>")
