@@ -96,27 +96,34 @@ void append_if_valid(
 hax::core::CandidateProfile profile_for(const std::string& label) {
   hax::core::CandidateProfile profile;
 
-  if (label == "browser-default") {
+  if (label.find("frame-default") != std::string::npos) {
     profile.frame = hax::core::FramePolicy::browser_default;
-    profile.priority = hax::core::PriorityPolicy::normal;
     profile.disable_vsync = false;
   } else {
     profile.frame = hax::core::FramePolicy::uncapped;
     profile.disable_vsync = true;
   }
 
-  if (label.find("highgpu") != std::string::npos) {
+  if (label.find("gpu-high") != std::string::npos) {
     profile.gpu = hax::core::GpuPreference::high_performance;
-  } else if (label.find("lowgpu") != std::string::npos) {
+  } else if (label.find("gpu-low") != std::string::npos) {
     profile.gpu = hax::core::GpuPreference::low_power;
+  } else {
+    profile.gpu = hax::core::GpuPreference::system_default;
   }
 
-  if (label.find("pcores") != std::string::npos) {
+  if (label.find("cpu-performance") != std::string::npos) {
     profile.cpu = hax::core::CpuPolicy::prefer_performance_cores;
+  } else {
+    profile.cpu = hax::core::CpuPolicy::system_default;
   }
 
-  if (label.find("highprio") != std::string::npos) {
+  if (label.find("prio-high") != std::string::npos) {
     profile.priority = hax::core::PriorityPolicy::high;
+  } else if (label.find("prio-above") != std::string::npos) {
+    profile.priority = hax::core::PriorityPolicy::above_normal;
+  } else {
+    profile.priority = hax::core::PriorityPolicy::normal;
   }
 
   return profile;
@@ -239,10 +246,11 @@ int main(int argc, char** argv) {
       captures.begin(),
       captures.end(),
       [](const Capture& capture) {
-        return capture.label == "browser-default";
+        return capture.label ==
+               "frame-default_gpu-default_cpu-default_prio-normal";
       });
   if (baseline_it == captures.end()) {
-    std::cerr << "browser-default baseline is required.\n";
+    std::cerr << "Default browser baseline is required.\n";
     return 4;
   }
 
