@@ -1,0 +1,49 @@
+name: Windows CEF App
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CEF
+        uses: actions/cache@v4
+        with:
+          path: third_party/cef
+          key: cef-154.0.28-g564dd6c-chromium-154.0.8037.58-windows64
+
+      - name: Configure
+        shell: pwsh
+        run: >
+          cmake -S . -B build
+          -G "Visual Studio 17 2022"
+          -A x64
+          -DHAX_BUILD_APP=ON
+          -DHAX_BUILD_TESTS=ON
+          -DHAX_BUILD_BENCHMARKS=ON
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test core
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Verify application payload
+        shell: pwsh
+        run: |
+          $exe = "build/Release/hax.exe"
+          if (-not (Test-Path $exe)) {
+            throw "Expected application binary was not produced: $exe"
+          }
+          Get-Item $exe | Format-List Name,Length,LastWriteTime
